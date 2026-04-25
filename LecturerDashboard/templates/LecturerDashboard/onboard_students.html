@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+  <h2 class="mb-4">Onboard Students for {{ course.name }}</h2>
+  <div class="card shadow">
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+          <label>Select students from {{ course.program.name }}:</label>
+          <div class="list-group">
+            {% for student in students %}
+              <label class="list-group-item">
+                <input type="checkbox" name="students" value="{{ student.id }}">
+                {{ student.username }} ({{ student.email }})
+              </label>
+            {% empty %}
+              <p>No students found in this program.</p>
+            {% endfor %}
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Enroll Selected Students</button>
+        <a href="{% url 'lecturer_dashboard' %}" class="btn btn-secondary mt-3">Cancel</a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

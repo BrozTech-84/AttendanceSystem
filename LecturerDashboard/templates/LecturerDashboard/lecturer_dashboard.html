@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% load custom_tags %}
+{% block content %}
+<div class="container mt-5">
+  <h2 class="mb-4 text-center">Lecturer Dashboard</h2>
+
+  <!-- Programs Section -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-body">
+          <h5 class="card-title">My Programs</h5>
+          <ul class="list-group list-group-flush">
+            {% for program in request.user.programs.all %}
+              <li class="list-group-item">{{ program.name }} ({{ program.code }})</li>
+            {% empty %}
+              <li class="list-group-item text-muted">No programs assigned</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Courses, Sessions, Students -->
+  <div class="row g-4">
+    <!-- Courses -->
+    <div class="col-md-4">
+      <div class="card shadow h-100">
+        <div class="card-body">
+          <h5 class="card-title">My Courses</h5>
+          <a href="{% url 'add_course' %}" class="btn btn-success mb-3">+ Add Course</a>
+          {% for program, courses in grouped_courses.items %}
+            <h6 class="mt-2">{{ program.name }} ({{ program.code }})</h6>
+            <ul class="list-group list-group-flush">
+              {% for course in courses %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  {{ course.name }} ({{ course.code }})
+                  <div class="btn-group">
+                    <a href="{% url 'onboard_students' course.id %}" class="btn btn-sm btn-secondary">Onboard</a>
+                    <a href="{% url 'start_session' course.id %}" class="btn btn-sm btn-primary">QR</a>
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+          {% empty %}
+            <p class="text-muted">No courses available</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Sessions -->
+    <div class="col-md-4">
+      <div class="card shadow h-100">
+        <div class="card-body">
+          <h5 class="card-title">My Sessions</h5>
+          <ul class="list-group list-group-flush">
+            {% for session in sessions %}
+              <li class="list-group-item">
+                <strong>{{ session.course.name }}</strong> - {{ session.topic }}<br>
+                <small class="text-muted">{{ session.created_at }}</small>
+              </li>
+            {% empty %}
+              <li class="list-group-item text-muted">No sessions found</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Students -->
+    <div class="col-md-4">
+      <div class="card shadow h-100">
+        <div class="card-body">
+          <h5 class="card-title">My Students</h5>
+          {% for program, courses in grouped_courses.items %}
+            <h6 class="mt-2">{{ program.name }} ({{ program.code }})</h6>
+            {% for course in courses %}
+              <strong>{{ course.name }} ({{ course.code }})</strong>
+              <ul class="list-group list-group-flush mb-3">
+                {% for student in course_students|get_item:course.id %}
+                  <li class="list-group-item">{{ student.username }} ({{ student.email }})</li>
+                {% empty %}
+                  <li class="list-group-item text-muted">No students enrolled</li>
+                {% endfor %}
+              </ul>
+            {% endfor %}
+          {% empty %}
+            <p class="text-muted">No courses available</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

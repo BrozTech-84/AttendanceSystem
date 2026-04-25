@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+  <h2 class="mb-4 text-center">Welcome, {{ user.username }}</h2>
+
+  <!-- Courses Section -->
+  <h4 class="mb-3">My Courses</h4>
+  <div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for course in courses %}
+      <div class="col">
+        <div class="border rounded p-3 h-100 bg-light">
+          <h6>{{ course.name }}</h6>
+          <small class="text-muted">{{ course.code }}</small>
+        </div>
+      </div>
+    {% empty %}
+      <p class="text-muted">No courses found</p>
+    {% endfor %}
+  </div>
+
+  <!-- Active Sessions Section -->
+  <h4 class="mt-5 mb-3">Active Sessions</h4>
+  <div class="row row-cols-1 row-cols-md-2 g-4">
+    {% for session in sessions %}
+      <div class="col">
+        <div class="border rounded p-3 h-100">
+          <h6>{{ session.course.name }}</h6>
+          <p class="mb-1">{{ session.topic }}</p>
+          <small class="text-muted">Started: {{ session.created_at }}</small>
+          <div class="mt-2">
+            <a href="#"
+               class="btn btn-success btn-sm"
+               data-bs-toggle="modal"
+               data-bs-target="#qrScannerModal"
+               onclick="startQrScanner({{ session.id }})">
+               Join / Mark Attendance
+            </a>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <p class="text-muted">No active sessions</p>
+    {% endfor %}
+  </div>
+
+  <!-- Attendance History Section -->
+  <h4 class="mt-5 mb-3">My Attendance</h4>
+  <div class="list-group">
+    {% for record in attendance %}
+      <div class="list-group-item">
+        <strong>{{ record.session.course.name }}</strong> - {{ record.session.topic }}
+        <br><small class="text-muted">Marked at: {{ record.timestamp }}</small>
+      </div>
+    {% empty %}
+      <p class="text-muted">No attendance records</p>
+    {% endfor %}
+  </div>
+
+  <!-- QR Scanner Modal -->
+  <div class="modal fade" id="qrScannerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Scan QR Code</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="qr-reader" style="width:100%"></div>
+
+          <!-- Divider -->
+          <hr class="my-4">
+
+          <!-- Fallback option -->
+          <div class="mt-3">
+            <label for="manualCode" class="form-label">Or enter code manually:</label>
+            <input type="text" id="manualCode" class="form-control" placeholder="Enter QR code text">
+            <button class="btn btn-primary mt-2" onclick="submitManualCode()">Submit</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentSessionId = null;
+
+function startQrScanner(sessionId) {
+  currentSessionId = sessionId;  // store session ID globally
+  const qrReader = new Html5Qrcode("qr-reader");
+
+  qrReader.start(
+    { facingMode: "environment" }, // back camera
+    { fps: 10, qrbox: 250 },
+    (qrCodeMessage) => {
+      sendAttendance(qrCodeMessage);
+      qrReader.stop();
+      bootstrap.Modal.getInstance(document.getElementById("qrScannerModal")).hide();
+    },
+    (errorMessage) => {
+      console.log("QR scan error:", errorMessage);
+    }
+  );
+}
+
+function submitManualCode() {
+  const code = document.getElementById("manualCode").value;
+  if (!code) {
+    alert("Please enter a code.");
+    return;
+  }
+  sendAttendance(code);
+}
+
+function sendAttendance(qrData) {
+  fetch(`/scanner/mark-attendance/${currentSessionId}/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken")
+    },
+    body: JSON.stringify({ qr_data: qrData })
+  })
+  .then(response => {
+    if (response.ok) {
+      alert("Attendance marked successfully!");
+      bootstrap.Modal.getInstance(document.getElementById('qrScannerModal')).hide();
+    } else {
+      alert("Invalid QR code. Try again.");
+    }
+  });
+}
+
+// Helper to get CSRF token
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== "") {
+    const cookies = document.cookie.split(";");
+    for (let cookie of cookies) {
+      cookie = cookie.trim();
+      if (cookie.substring(0, name.length + 1) === name + "=") {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+</script>
+{% endblock %}

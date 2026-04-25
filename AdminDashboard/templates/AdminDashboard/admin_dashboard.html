@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+  <h2 class="mb-4">Admin Dashboard</h2>
+  <div class="row">
+    <!-- Programs -->
+    <div class="col-md-3">
+      <div class="card shadow">
+        <div class="card-body">
+          <h5 class="card-title">Programs</h5>
+          <p>Total: {{ programs|length }}</p>
+        </div>
+      </div>
+    </div>
+    <!-- Users -->
+    <div class="col-md-3">
+      <div class="card shadow">
+        <div class="card-body">
+          <h5 class="card-title">Users</h5>
+          <p>Total: {{ users|length }}</p>
+        </div>
+      </div>
+    </div>
+    <!-- Courses -->
+    <div class="col-md-3">
+      <div class="card shadow">
+        <div class="card-body">
+          <h5 class="card-title">Courses</h5>
+          <p>Total: {{ courses|length }}</p>
+        </div>
+      </div>
+    </div>
+    <!-- Attendance -->
+    <div class="col-md-3">
+      <div class="card shadow">
+        <div class="card-body">
+          <h5 class="card-title">Attendance Records</h5>
+          <p>Total: {{ attendance|length }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
