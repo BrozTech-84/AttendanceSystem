@@ -16,14 +16,14 @@ class CustomUser(AbstractUser):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="students"
+        related_name="student_users"   # ✅ unique reverse accessor
     )
 
     # Lecturers: multiple programs
     programs = models.ManyToManyField(
         Program,
         blank=True,
-        related_name="lecturers"
+        related_name="customuser_lecturers"   # ✅ unique reverse accessor
     )
 
     ROLE_CHOICES = (
@@ -35,3 +35,16 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return f"{self.username} ({self.role})"
+
+
+class Lecturer(models.Model):
+    username = models.CharField(max_length=100, unique=True)
+    email = models.EmailField(unique=True)
+    programs = models.ManyToManyField(
+        Program,
+        related_name="lecturer_profiles",   # ✅ unique reverse accessor
+        blank=True
+    )
+
+    def __str__(self):
+        return self.username

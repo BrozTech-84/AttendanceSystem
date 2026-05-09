@@ -1,0 +1,535 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+  :root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    --transition: all 0.3s ease;
+  }
+
+  body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+  }
+
+  .page-header {
+    background: var(--primary-gradient);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    color: white;
+    box-shadow: var(--card-shadow);
+  }
+
+  .page-header h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--card-shadow);
+    transition: var(--transition);
+  }
+
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+  }
+
+  .stat-card i {
+    font-size: 2rem;
+    color: #667eea;
+    margin-bottom: 1rem;
+  }
+
+  .stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #333;
+  }
+
+  .stat-label {
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  .course-card {
+    background: white;
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+    transition: var(--transition);
+  }
+
+  .course-card:hover {
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+  }
+
+  .course-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 1.25rem 1.5rem;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .course-header:hover {
+    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+  }
+
+  .course-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #333;
+  }
+
+  .course-code {
+    display: inline-block;
+    background: #667eea;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+  }
+
+  .badge-custom {
+    background: #667eea;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 30px;
+    font-size: 0.85rem;
+  }
+
+  .session-list {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+  }
+
+  .session-list.expanded {
+    max-height: 2000px;
+    transition: max-height 0.5s ease-in;
+  }
+
+  .session-item {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #f0f0f0;
+    transition: var(--transition);
+  }
+
+  .session-item:hover {
+    background: #f8f9ff;
+    transform: translateX(5px);
+  }
+
+  .session-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+
+  .info-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    background: #f8f9fa;
+    border-radius: 20px;
+    font-size: 0.85rem;
+  }
+
+  .info-chip i {
+    color: #667eea;
+    font-size: 0.9rem;
+  }
+
+  .attendance-stats {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+
+  .stat-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .stat-badge.present {
+    background: #d4edda;
+    color: #155724;
+  }
+
+  .stat-badge.absent {
+    background: #f8d7da;
+    color: #721c24;
+  }
+
+  .stat-badge.late {
+    background: #fff3cd;
+    color: #856404;
+  }
+
+  .btn-view-report {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    transition: var(--transition);
+  }
+
+  .btn-view-report:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #888;
+  }
+
+  .empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .session-item {
+    animation: slideDown 0.3s ease-out;
+  }
+
+  @media (max-width: 768px) {
+    .page-header h2 {
+      font-size: 1.5rem;
+    }
+    
+    .session-info {
+      grid-template-columns: 1fr;
+    }
+    
+    .info-chip {
+      width: 100%;
+    }
+  }
+</style>
+
+<div class="container mt-4">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <h2>
+          <i class="fas fa-history me-3"></i>
+          My Sessions History
+        </h2>
+        <p class="mb-0">
+          <i class="fas fa-calendar-alt me-2"></i>
+          View all your past and active teaching sessions
+        </p>
+      </div>
+      <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <a href="{% url 'lecturer_dashboard' %}" class="btn btn-light">
+          <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Summary -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <i class="fas fa-book-open"></i>
+      <div class="stat-number">{{ course_sessions|length }}</div>
+      <div class="stat-label">Total Courses</div>
+    </div>
+    <div class="stat-card">
+      <i class="fas fa-chalkboard-teacher"></i>
+      <div class="stat-number">
+        {% with total_sessions=0 %}
+          {% for item in course_sessions %}
+            {% with total_sessions=total_sessions|add:item.session_count %}
+            {% endwith %}
+          {% endfor %}
+          {{ total_sessions }}
+        {% endwith %}
+      </div>
+      <div class="stat-label">Total Sessions</div>
+    </div>
+    <div class="stat-card">
+      <i class="fas fa-users"></i>
+      <div class="stat-number" id="totalStudents">Loading...</div>
+      <div class="stat-label">Total Students Enrolled</div>
+    </div>
+  </div>
+
+  <!-- Courses and Sessions -->
+  {% for item in course_sessions %}
+    <div class="course-card" data-course-id="{{ item.course.id }}">
+      <div class="course-header" onclick="toggleCourse({{ item.course.id }})">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <span class="course-title">
+              {{ item.course.name }}
+              <span class="course-code">{{ item.course.code }}</span>
+            </span>
+            <div class="mt-1">
+              <span class="badge-custom">
+                <i class="fas fa-calendar-alt me-1"></i>
+                {{ item.sessions|length }} Sessions
+              </span>
+              <span class="badge-custom ms-2">
+                <i class="fas fa-users me-1"></i>
+                {{ item.course.students.count }} Students
+              </span>
+            </div>
+          </div>
+          <i class="fas fa-chevron-down text-primary" id="icon-{{ item.course.id }}"></i>
+        </div>
+      </div>
+      
+      <div class="session-list" id="sessions-{{ item.course.id }}">
+        {% if item.sessions %}
+          {% for session in item.sessions %}
+            <div class="session-item" data-session-id="{{ session.id }}">
+              <div class="d-flex justify-content-between align-items-start flex-wrap">
+                <div>
+                  <h6 class="mb-2">
+                    <i class="fas fa-qrcode text-primary me-2"></i>
+                    Session #{{ forloop.revcounter }}
+                  </h6>
+                  <div class="session-info">
+                    <span class="info-chip">
+                      <i class="fas fa-id-card"></i>
+                      ID: {{ session.id }}
+                    </span>
+                    <span class="info-chip">
+                      <i class="fas fa-calendar-day"></i>
+                      Date: {{ session.created_at|date:"l, F j, Y" }}
+                    </span>
+                    <span class="info-chip">
+                      <i class="fas fa-clock"></i>
+                      Time: {{ session.created_at|time:"g:i A" }}
+                    </span>
+                    <span class="info-chip">
+                      <i class="fas fa-map-marker-alt"></i>
+                      {% if session.location_name %}
+                        {{ session.location_name|truncatechars:30 }}
+                      {% elif session.latitude and session.longitude %}
+                        📍 {{ session.latitude|floatformat:4 }}, {{ session.longitude|floatformat:4 }}
+                      {% else %}
+                        Not recorded
+                      {% endif %}
+                    </span>
+                  </div>
+                  
+                  <!-- Attendance Summary (if available) -->
+                  <div class="attendance-stats mt-2" id="stats-{{ session.id }}">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span class="text-muted ms-2">Loading attendance...</span>
+                  </div>
+                </div>
+                
+                <div class="mt-2 mt-sm-0">
+                  <button class="btn-view-report" onclick="viewReport({{ session.id }})">
+                    <i class="fas fa-chart-line me-1"></i> View Report
+                  </button>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="p-4 text-center text-muted">
+            <i class="fas fa-info-circle"></i> No sessions found for this course.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  {% empty %}
+    <div class="empty-state">
+      <i class="fas fa-history"></i>
+      <h5>No Sessions Yet</h5>
+      <p>You haven't created any sessions. Start a session from your dashboard!</p>
+      <a href="{% url 'lecturer_dashboard' %}" class="btn btn-primary mt-2">
+        <i class="fas fa-chalkboard"></i> Go to Dashboard
+      </a>
+    </div>
+  {% endfor %}
+</div>
+
+<script>
+  // Course toggle function
+  function toggleCourse(courseId) {
+    const sessionsDiv = document.getElementById(`sessions-${courseId}`);
+    const icon = document.getElementById(`icon-${courseId}`);
+    
+    if (sessionsDiv.classList.contains('expanded')) {
+      sessionsDiv.classList.remove('expanded');
+      icon.classList.remove('fa-chevron-up');
+      icon.classList.add('fa-chevron-down');
+    } else {
+      sessionsDiv.classList.add('expanded');
+      icon.classList.remove('fa-chevron-down');
+      icon.classList.add('fa-chevron-up');
+      
+      // Load attendance stats when expanding
+      loadAttendanceStats(courseId);
+    }
+  }
+  
+  // Load attendance statistics for sessions
+  async function loadAttendanceStats(courseId) {
+    const sessions = document.querySelectorAll(`#sessions-${courseId} .session-item`);
+    
+    for (const session of sessions) {
+      const sessionId = session.dataset.sessionId;
+      const statsDiv = document.getElementById(`stats-${sessionId}`);
+      
+      // Skip if already loaded
+      if (statsDiv.dataset.loaded === 'true') continue;
+      
+      try {
+        const response = await fetch(`/lecturer/session-attendance-stats/${sessionId}/`);
+        const data = await response.json();
+        
+        if (data) {
+          statsDiv.innerHTML = `
+            <span class="stat-badge present">
+              <i class="fas fa-user-check"></i> Present: ${data.present || 0}
+            </span>
+            <span class="stat-badge late">
+              <i class="fas fa-clock"></i> Late: ${data.late || 0}
+            </span>
+            <span class="stat-badge absent">
+              <i class="fas fa-user-times"></i> Absent: ${data.absent || 0}
+            </span>
+            <span class="text-muted ms-2">
+              <i class="fas fa-users"></i> Total: ${data.total || 0}
+            </span>
+          `;
+          statsDiv.dataset.loaded = 'true';
+        }
+      } catch (error) {
+        console.error('Error loading stats:', error);
+        statsDiv.innerHTML = '<span class="text-muted">Attendance data unavailable</span>';
+      }
+    }
+  }
+  
+  // View report for a specific session
+  function viewReport(sessionId) {
+    window.location.href = `/lecturer/session-report/${sessionId}/`;
+  }
+  
+  // Calculate total students across all courses
+  function calculateTotalStudents() {
+    let total = 0;
+    const courseCards = document.querySelectorAll('.course-card');
+    courseCards.forEach(card => {
+      const studentsText = card.querySelector('.badge-custom:last-child')?.textContent || '';
+      const match = studentsText.match(/(\d+)/);
+      if (match) total += parseInt(match[1]);
+    });
+    
+    const totalStudentsSpan = document.getElementById('totalStudents');
+    if (totalStudentsSpan) totalStudentsSpan.textContent = total;
+  }
+  
+  // Expand first course by default (optional)
+  function expandFirstCourse() {
+    const firstCourse = document.querySelector('.course-card');
+    if (firstCourse) {
+      const courseId = firstCourse.dataset.courseId;
+      setTimeout(() => toggleCourse(courseId), 500);
+    }
+  }
+  
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    // Press 'E' to expand all courses
+    if (e.key === 'e' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      document.querySelectorAll('.course-card').forEach(card => {
+        const sessionsDiv = card.querySelector('.session-list');
+        const icon = card.querySelector('.course-header i');
+        if (!sessionsDiv.classList.contains('expanded')) {
+          sessionsDiv.classList.add('expanded');
+          icon.classList.remove('fa-chevron-down');
+          icon.classList.add('fa-chevron-up');
+        }
+      });
+      showNotification('Expanded all courses', 'info');
+    }
+    
+    // Press 'C' to collapse all courses
+    if (e.key === 'c' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      document.querySelectorAll('.course-card').forEach(card => {
+        const sessionsDiv = card.querySelector('.session-list');
+        const icon = card.querySelector('.course-header i');
+        if (sessionsDiv.classList.contains('expanded')) {
+          sessionsDiv.classList.remove('expanded');
+          icon.classList.remove('fa-chevron-up');
+          icon.classList.add('fa-chevron-down');
+        }
+      });
+      showNotification('Collapsed all courses', 'info');
+    }
+  });
+  
+  function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
+    notification.style.zIndex = '9999';
+    notification.style.minWidth = '300px';
+    notification.innerHTML = `
+      <i class="fas fa-keyboard me-2"></i>
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+  }
+  
+  // Initialize
+  document.addEventListener('DOMContentLoaded', () => {
+    calculateTotalStudents();
+    // expandFirstCourse(); // Uncomment to auto-expand first course
+    
+    // Show keyboard shortcuts hint
+    console.log('💡 Keyboard shortcuts: Ctrl+E (Expand all), Ctrl+C (Collapse all)');
+  });
+</script>
+{% endblock %}

@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-zc&$*1rp52kl2^lz$xib1g%14pqbjf-6bp)sr925v4&sov*f%i
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'channels',
 
     #MyApps
     'UserLogin',
@@ -46,8 +47,14 @@ INSTALLED_APPS = [
     'QrCodeGenerator',
 ]
 
+ASGI_APPLICATION = "AttendanceSystem.asgi.application"
 AUTH_USER_MODEL = 'UserLogin.CustomUser'
 
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

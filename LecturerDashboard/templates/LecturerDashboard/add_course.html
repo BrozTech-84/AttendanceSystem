@@ -1,20 +1,576 @@
-{% extends 'base.html' %} {% block content %}
-<div class="container mt-5">
-  <h2 class="mb-4">Add Course</h2>
-  <div class="card shadow">
-    <div class="card-body">
-      <form method="post">
-        {% csrf_token %} {% if form.errors %}
-        <div class="alert alert-danger">{{ form.errors }}</div>
-        {% endif %}
-        <div class="mb-3">{{ form.name.label_tag }} {{ form.name }}</div>
-        <div class="mb-3">{{ form.code.label_tag }} {{ form.code }}</div>
-        <div class="mb-3">
-          {{ form.programs.label_tag }} {{ form.programs }}
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+  :root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    --card-hover-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+    --transition: all 0.3s ease;
+  }
+
+  body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+  }
+
+  .page-header {
+    background: var(--primary-gradient);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    color: white;
+    box-shadow: var(--card-shadow);
+  }
+
+  .page-header h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .page-header p {
+    opacity: 0.9;
+    margin-bottom: 0;
+  }
+
+  .form-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+    transition: var(--transition);
+  }
+
+  .form-card:hover {
+    box-shadow: var(--card-hover-shadow);
+  }
+
+  .form-card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 1.5rem;
+    border-bottom: 2px solid #e0e0e0;
+  }
+
+  .form-card-header h4 {
+    margin: 0;
+    color: #333;
+    font-weight: 600;
+  }
+
+  .form-card-header h4 i {
+    color: #667eea;
+    margin-right: 0.5rem;
+  }
+
+  .form-card-body {
+    padding: 2rem;
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  .form-group label i {
+    color: #667eea;
+    margin-right: 0.5rem;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: var(--transition);
+    background: white;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .form-group input.error,
+  .form-group select.error,
+  .form-group textarea.error {
+    border-color: #dc3545;
+  }
+
+  .help-text {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 0.25rem;
+  }
+
+  .errorlist {
+    color: #dc3545;
+    font-size: 0.85rem;
+    list-style: none;
+    padding: 0;
+    margin-top: 0.25rem;
+  }
+
+  /* Programs Checkbox Grid */
+  .programs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+
+  .program-checkbox {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    transition: var(--transition);
+    cursor: pointer;
+    background: white;
+  }
+
+  .program-checkbox:hover {
+    border-color: #667eea;
+    background: #f8f9ff;
+    transform: translateX(5px);
+  }
+
+  .program-checkbox input {
+    width: auto;
+    margin-right: 0.75rem;
+    cursor: pointer;
+    accent-color: #667eea;
+  }
+
+  .program-checkbox label {
+    margin: 0;
+    cursor: pointer;
+    font-weight: normal;
+    flex: 1;
+  }
+
+  .program-checkbox .program-code {
+    font-size: 0.75rem;
+    color: #888;
+    margin-left: 0.5rem;
+  }
+
+  /* Form Actions */
+  .form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid #f0f0f0;
+  }
+
+  .btn-primary-custom {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: var(--transition);
+    cursor: pointer;
+  }
+
+  .btn-primary-custom:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+  }
+
+  .btn-secondary-custom {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: var(--transition);
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+  }
+
+  .btn-secondary-custom:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+  }
+
+  /* Alert Messages */
+  .alert-success {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    color: #155724;
+    border: none;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .alert-danger {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    color: #721c24;
+    border: none;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Loading State */
+  .btn-loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+
+  .loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 0.6s linear infinite;
+    margin-right: 0.5rem;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .page-header h2 {
+      font-size: 1.5rem;
+    }
+    
+    .form-card-body {
+      padding: 1.5rem;
+    }
+    
+    .programs-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .form-actions {
+      flex-direction: column;
+    }
+    
+    .form-actions button,
+    .form-actions a {
+      width: 100%;
+    }
+  }
+
+  /* Animations */
+  .fade-in {
+    animation: fadeIn 0.5s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Character counter */
+  .char-counter {
+    font-size: 0.75rem;
+    color: #888;
+    text-align: right;
+    margin-top: 0.25rem;
+  }
+
+  .char-counter.warning {
+    color: #ffc107;
+  }
+
+  .char-counter.danger {
+    color: #dc3545;
+  }
+</style>
+
+<div class="container mt-4 fade-in">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <h2>
+          <i class="fas fa-plus-circle me-3"></i>
+          Add New Course
+        </h2>
+        <p>
+          <i class="fas fa-info-circle me-2"></i>
+          Create a new course and assign it to one or more programs
+        </p>
+      </div>
+      <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <a href="{% url 'lecturer_dashboard' %}" class="btn btn-light">
+          <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Card -->
+  <div class="form-card">
+    <div class="form-card-header">
+      <h4>
+        <i class="fas fa-book-open"></i>
+        Course Information
+      </h4>
+    </div>
+    
+    <div class="form-card-body">
+      <!-- Success Message -->
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert-success">
+            <i class="fas fa-check-circle fa-lg"></i>
+            <span>{{ message }}</span>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <!-- Form Errors -->
+      {% if form.errors %}
+        <div class="alert-danger">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          <strong>Please correct the following errors:</strong>
+          <ul class="mb-0 mt-2">
+            {% for field, errors in form.errors.items %}
+              {% for error in errors %}
+                <li>{{ field|title }}: {{ error }}</li>
+              {% endfor %}
+            {% endfor %}
+          </ul>
         </div>
-        <button type="submit" class="btn btn-primary">Add Course</button>
+      {% endif %}
+
+      <form method="post" id="addCourseForm">
+        {% csrf_token %}
+        
+        <!-- Course Name Field -->
+        <div class="form-group">
+          <label for="{{ form.name.id_for_label }}">
+            <i class="fas fa-tag"></i>
+            Course Name
+          </label>
+          {{ form.name }}
+          <div class="help-text">
+            <i class="fas fa-info-circle"></i> 
+            Enter the full course name (e.g., "Advanced Database Systems")
+          </div>
+          <div class="char-counter" id="nameCounter">0/200 characters</div>
+        </div>
+
+        <!-- Course Code Field -->
+        <div class="form-group">
+          <label for="{{ form.code.id_for_label }}">
+            <i class="fas fa-barcode"></i>
+            Course Code
+          </label>
+          {{ form.code }}
+          <div class="help-text">
+            <i class="fas fa-info-circle"></i> 
+            Enter the course code (e.g., "CS401", "BCS 306")
+          </div>
+          <div class="char-counter" id="codeCounter">0/20 characters</div>
+        </div>
+
+        <!-- Programs Field -->
+        <div class="form-group">
+          <label>
+            <i class="fas fa-layer-group"></i>
+            Assign to Program(s)
+          </label>
+          <div class="help-text mb-3">
+            <i class="fas fa-info-circle"></i> 
+            Select one or more programs for this course
+          </div>
+          
+          <div class="programs-grid">
+            {% for program in form.programs.field.queryset %}
+              <div class="program-checkbox">
+                <input type="checkbox" 
+                       name="programs" 
+                       value="{{ program.id }}"
+                       id="program_{{ program.id }}"
+                       {% if program.id in form.programs.value %}checked{% endif %}>
+                <label for="program_{{ program.id }}">
+                  {{ program.name }}
+                  <span class="program-code">({{ program.code }})</span>
+                </label>
+              </div>
+            {% empty %}
+              <div class="help-text">
+                <i class="fas fa-exclamation-triangle"></i> 
+                No programs available. Please contact administrator.
+              </div>
+            {% endfor %}
+          </div>
+          
+          {% if form.programs.errors %}
+            <div class="errorlist">
+              {% for error in form.programs.errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button type="submit" class="btn-primary-custom" id="submitBtn">
+            <i class="fas fa-save me-2"></i>
+            Add Course
+          </button>
+          <a href="{% url 'lecturer_dashboard' %}" class="btn-secondary-custom">
+            <i class="fas fa-times me-2"></i>
+            Cancel
+          </a>
+        </div>
       </form>
     </div>
   </div>
+
+  <!-- Help Section -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="alert alert-info" style="background: #e7f3ff; border: none; border-radius: 12px;">
+        <i class="fas fa-lightbulb fa-lg me-3"></i>
+        <strong>Pro Tip:</strong> After adding a course, you'll be able to:
+        <ul class="mt-2 mb-0">
+          <li>Onboard students to the course</li>
+          <li>Start QR-based attendance sessions</li>
+          <li>Track attendance and generate reports</li>
+        </ul>
+      </div>
+    </div>
+  </div>
 </div>
+
+<script>
+  // Character counter for Course Name
+  const nameInput = document.getElementById('{{ form.name.id_for_label }}');
+  const nameCounter = document.getElementById('nameCounter');
+  
+  if (nameInput && nameCounter) {
+    function updateNameCounter() {
+      const length = nameInput.value.length;
+      nameCounter.textContent = `${length}/200 characters`;
+      if (length > 180) {
+        nameCounter.classList.add('warning');
+      } else {
+        nameCounter.classList.remove('warning');
+      }
+      if (length >= 200) {
+        nameCounter.classList.add('danger');
+      } else {
+        nameCounter.classList.remove('danger');
+      }
+    }
+    
+    nameInput.addEventListener('input', updateNameCounter);
+    updateNameCounter();
+  }
+  
+  // Character counter for Course Code
+  const codeInput = document.getElementById('{{ form.code.id_for_label }}');
+  const codeCounter = document.getElementById('codeCounter');
+  
+  if (codeInput && codeCounter) {
+    function updateCodeCounter() {
+      const length = codeInput.value.length;
+      codeCounter.textContent = `${length}/20 characters`;
+      if (length > 15) {
+        codeCounter.classList.add('warning');
+      } else {
+        codeCounter.classList.remove('warning');
+      }
+      if (length >= 20) {
+        codeCounter.classList.add('danger');
+      } else {
+        codeCounter.classList.remove('danger');
+      }
+    }
+    
+    codeInput.addEventListener('input', updateCodeCounter);
+    updateCodeCounter();
+  }
+  
+  // Form submission with loading state
+  const form = document.getElementById('addCourseForm');
+  const submitBtn = document.getElementById('submitBtn');
+  
+  if (form && submitBtn) {
+    form.addEventListener('submit', function(e) {
+      // Check if at least one program is selected
+      const checkboxes = document.querySelectorAll('input[name="programs"]:checked');
+      if (checkboxes.length === 0) {
+        e.preventDefault();
+        alert('Please select at least one program for this course.');
+        return;
+      }
+      
+      // Show loading state
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="loading-spinner"></span> Adding Course...';
+      submitBtn.classList.add('btn-loading');
+    });
+  }
+  
+  // Auto-dismiss alerts after 5 seconds
+  setTimeout(function() {
+    const alerts = document.querySelectorAll('.alert-success, .alert-danger');
+    alerts.forEach(function(alert) {
+      const bsAlert = new bootstrap.Alert(alert);
+      setTimeout(function() {
+        bsAlert.close();
+      }, 5000);
+    });
+  }, 5000);
+  
+  // Add hover effect to program checkboxes
+  const programCheckboxes = document.querySelectorAll('.program-checkbox');
+  programCheckboxes.forEach(function(checkbox) {
+    checkbox.addEventListener('mouseenter', function() {
+      this.style.transform = 'translateX(5px)';
+    });
+    
+    checkbox.addEventListener('mouseleave', function() {
+      this.style.transform = 'translateX(0)';
+    });
+  });
+  
+  // Input validation for course code (uppercase, alphanumeric)
+  if (codeInput) {
+    codeInput.addEventListener('input', function(e) {
+      this.value = this.value.toUpperCase().replace(/[^A-Z0-9\s]/g, '');
+    });
+  }
+</script>
 {% endblock %}

@@ -1,80 +1,442 @@
-{% extends 'base.html' %}
-{% block content %}
-<div class="container mt-5">
-  <h2 class="mb-4 text-center">Welcome, {{ user.username }}</h2>
+{% extends 'base.html' %} 
+{% load static %}
 
-  <!-- Courses Section -->
-  <h4 class="mb-3">My Courses</h4>
-  <div class="row row-cols-1 row-cols-md-3 g-4">
-    {% for course in courses %}
-      <div class="col">
-        <div class="border rounded p-3 h-100 bg-light">
-          <h6>{{ course.name }}</h6>
-          <small class="text-muted">{{ course.code }}</small>
+{% block content %}
+<style>
+  :root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    --card-hover-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+    --transition: all 0.3s ease;
+  }
+
+  body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+  }
+
+  .dashboard-header {
+    background: var(--primary-gradient);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    color: white;
+    box-shadow: var(--card-shadow);
+  }
+
+  .dashboard-header h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .dashboard-header .student-info {
+    opacity: 0.9;
+    font-size: 1rem;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: var(--transition);
+    box-shadow: var(--card-shadow);
+    cursor: pointer;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--card-hover-shadow);
+  }
+
+  .stat-card i {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #333;
+  }
+
+  .stat-label {
+    color: #666;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+  }
+
+  .dashboard-card {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+    transition: var(--transition);
+    height: 100%;
+  }
+
+  .dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--card-hover-shadow);
+  }
+
+  .card-header-custom {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 1.25rem;
+    border-bottom: 2px solid #e0e0e0;
+  }
+
+  .card-header-custom h5 {
+    margin: 0;
+    font-weight: 600;
+    color: #333;
+  }
+
+  .card-header-custom i {
+    color: #667eea;
+    margin-right: 0.5rem;
+  }
+
+  .session-item {
+    padding: 1rem;
+    border-bottom: 1px solid #f0f0f0;
+    transition: var(--transition);
+    animation: slideIn 0.3s ease-out;
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slideOut {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+      max-height: 200px;
+    }
+    to {
+      opacity: 0;
+      transform: translateX(10px);
+      max-height: 0;
+      padding: 0;
+      margin: 0;
+    }
+  }
+
+  .session-item.removing {
+    animation: slideOut 0.3s ease-out forwards;
+    pointer-events: none;
+  }
+
+  .session-item:hover {
+    background: #f8f9ff;
+    transform: translateX(5px);
+  }
+
+  .session-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.25rem;
+  }
+
+  .session-meta {
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 0.5rem;
+  }
+
+  .expiry-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: #fff3cd;
+    color: #856404;
+    animation: pulse 1s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+
+  .btn-scan {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    transition: var(--transition);
+  }
+
+  .btn-scan:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+  }
+
+  .attendance-item {
+    padding: 0.75rem;
+    border-bottom: 1px solid #f0f0f0;
+    transition: var(--transition);
+  }
+
+  .attendance-item:hover {
+    background: #f8f9fa;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+  }
+
+  .status-present {
+    background: #d4edda;
+    color: #155724;
+  }
+
+  .status-late {
+    background: #fff3cd;
+    color: #856404;
+  }
+
+  .modal-content {
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  .modal-header {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+  }
+
+  .modal-header .btn-close {
+    filter: brightness(0) invert(1);
+  }
+
+  #qr-reader {
+    width: 100%;
+  }
+
+  #qr-reader__scan_region {
+    background: #f0f0f0;
+    border-radius: 12px;
+    padding: 10px;
+  }
+
+  .loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 0.6s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: #888;
+  }
+
+  .empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+  }
+
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .dashboard-header h2 {
+      font-size: 1.5rem;
+    }
+    
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+</style>
+
+<div class="container mt-4">
+  <!-- Dashboard Header -->
+  <div class="dashboard-header">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <h2>
+          <i class="fas fa-graduation-cap me-3"></i>
+          Welcome, {{ user.get_full_name|default:user.username }}
+        </h2>
+        <p class="student-info mb-0">
+          <i class="fas fa-envelope me-2"></i>{{ user.email }}
+          <span class="ms-3"><i class="fas fa-calendar-alt"></i> Student Dashboard</span>
+        </p>
+      </div>
+      <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <div class="btn-group">
+          <button class="btn btn-light" onclick="window.location.href='{% url 'logout' %}'">
+            <i class="fas fa-sign-out-alt"></i> Logout
+          </button>
         </div>
       </div>
-    {% empty %}
-      <p class="text-muted">No courses found</p>
-    {% endfor %}
+    </div>
   </div>
 
-  <!-- Active Sessions Section -->
-  <h4 class="mt-5 mb-3">Active Sessions</h4>
-  <div class="row row-cols-1 row-cols-md-2 g-4">
-    {% for session in sessions %}
-      <div class="col">
-        <div class="border rounded p-3 h-100">
-          <h6>{{ session.course.name }}</h6>
-          <p class="mb-1">{{ session.topic }}</p>
-          <small class="text-muted">Started: {{ session.created_at }}</small>
-          <div class="mt-2">
-            <a href="#"
-               class="btn btn-success btn-sm"
-               data-bs-toggle="modal"
-               data-bs-target="#qrScannerModal"
-               onclick="startQrScanner({{ session.id }})">
-               Join / Mark Attendance
-            </a>
+  <!-- Statistics Summary -->
+  <div class="stats-grid">
+    <div class="stat-card" onclick="scrollToSection('courses')">
+      <i class="fas fa-book-open text-primary"></i>
+      <div class="stat-number">{{ courses|length }}</div>
+      <div class="stat-label">Enrolled Courses</div>
+    </div>
+    <div class="stat-card" onclick="scrollToSection('sessions')">
+      <i class="fas fa-chalkboard-teacher text-success"></i>
+      <div class="stat-number" id="activeSessionsCount">{{ sessions|length }}</div>
+      <div class="stat-label">Active Sessions</div>
+    </div>
+    <div class="stat-card" onclick="scrollToSection('attendance')">
+      <i class="fas fa-user-check text-info"></i>
+      <div class="stat-number">{{ attendance|length }}</div>
+      <div class="stat-label">Attendance Records</div>
+    </div>
+    <div class="stat-card" onclick="calculateAttendanceRate()">
+      <i class="fas fa-chart-line text-warning"></i>
+      <div class="stat-number" id="attendanceRate">0%</div>
+      <div class="stat-label">Attendance Rate</div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Courses Card -->
+    <div class="col-md-4" id="courses">
+      <div class="dashboard-card">
+        <div class="card-header-custom">
+          <h5><i class="fas fa-book"></i> My Courses</h5>
+        </div>
+        <div class="card-body p-0">
+          <div class="list-group list-group-flush">
+            {% for course in courses %}
+              <div class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <strong>{{ course.name }}</strong>
+                  <br><small class="text-muted">{{ course.code }}</small>
+                </div>
+                <span class="badge bg-primary rounded-pill">{{ course.students.count }} students</span>
+              </div>
+            {% empty %}
+              <div class="empty-state">
+                <i class="fas fa-book-open"></i>
+                <p>No courses enrolled yet</p>
+              </div>
+            {% endfor %}
           </div>
         </div>
       </div>
-    {% empty %}
-      <p class="text-muted">No active sessions</p>
-    {% endfor %}
-  </div>
+    </div>
 
-  <!-- Attendance History Section -->
-  <h4 class="mt-5 mb-3">My Attendance</h4>
-  <div class="list-group">
-    {% for record in attendance %}
-      <div class="list-group-item">
-        <strong>{{ record.session.course.name }}</strong> - {{ record.session.topic }}
-        <br><small class="text-muted">Marked at: {{ record.timestamp }}</small>
-      </div>
-    {% empty %}
-      <p class="text-muted">No attendance records</p>
-    {% endfor %}
-  </div>
-
-  <!-- QR Scanner Modal -->
-  <div class="modal fade" id="qrScannerModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Scan QR Code</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <!-- Active Sessions Card -->
+    <div class="col-md-4" id="sessions">
+      <div class="dashboard-card">
+        <div class="card-header-custom">
+          <h5><i class="fas fa-chalkboard-teacher"></i> Active Sessions</h5>
         </div>
-        <div class="modal-body">
-          <div id="qr-reader" style="width:100%"></div>
+        <div class="card-body p-0">
+          <div id="activeSessionsList">
+            {% for session in sessions %}
+              <div class="session-item" data-session-id="{{ session.id }}" data-session-expiry="{{ session.qr_expiry.isoformat }}">
+                <div class="session-title"><strong>{{ session.course.name }}</strong> - {{ session.topic }}</div>
+                <div class="session-meta">
+                  <i class="fas fa-clock"></i> Started: {{ session.created_at|date:"H:i, M d" }}
+                </div>
+                <div class="session-meta">
+                  <span class="expiry-badge">
+                    <i class="fas fa-hourglass-half"></i> Expires: {{ session.qr_expiry|date:"H:i:s" }}
+                  </span>
+                </div>
+                <div class="mt-2">
+                  <button class="btn-scan" onclick="requestCameraAndScan({{ session.id }})">
+                    <i class="fas fa-qrcode me-1"></i> Scan QR to Attend
+                  </button>
+                </div>
+              </div>
+            {% empty %}
+              <div class="empty-state">
+                <i class="fas fa-chalkboard"></i>
+                <p>No active sessions available</p>
+                <small class="text-muted">Check back when your lecturer starts a session</small>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
 
-          <!-- Divider -->
-          <hr class="my-4">
-
-          <!-- Fallback option -->
-          <div class="mt-3">
-            <label for="manualCode" class="form-label">Or enter code manually:</label>
-            <input type="text" id="manualCode" class="form-control" placeholder="Enter QR code text">
-            <button class="btn btn-primary mt-2" onclick="submitManualCode()">Submit</button>
+    <!-- Attendance History Card -->
+    <div class="col-md-4" id="attendance">
+      <div class="dashboard-card">
+        <div class="card-header-custom">
+          <h5><i class="fas fa-history"></i> Recent Attendance</h5>
+        </div>
+        <div class="card-body p-0">
+          <div style="max-height: 400px; overflow-y: auto;">
+            {% for record in attendance|slice:":15" %}
+              <div class="attendance-item">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <strong>{{ record.session.course.name }}</strong>
+                    <br><small class="text-muted">{{ record.session.topic }}</small>
+                    <br><small class="text-muted"><i class="fas fa-calendar"></i> {{ record.timestamp|date:"M d, H:i" }}</small>
+                  </div>
+                  <div>
+                    {% if record.status == 'late' %}
+                      <span class="status-badge status-late"><i class="fas fa-clock"></i> Late</span>
+                    {% else %}
+                      <span class="status-badge status-present"><i class="fas fa-check-circle"></i> Present</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            {% empty %}
+              <div class="empty-state">
+                <i class="fas fa-user-check"></i>
+                <p>No attendance records yet</p>
+                <small class="text-muted">Scan QR codes in active sessions to mark attendance</small>
+              </div>
+            {% endfor %}
           </div>
         </div>
       </div>
@@ -82,69 +444,401 @@
   </div>
 </div>
 
+<!-- QR Scanner Modal -->
+<div class="modal fade" id="qrScannerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-qrcode me-2"></i>Scan QR Code
+          <span id="locationStatus" class="badge bg-secondary ms-2"></span>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="qr-reader" style="width: 100%"></div>
+        <div id="loadingMessage" class="text-center text-muted mt-2">
+          <div class="loading-spinner"></div> Initializing camera...
+        </div>
+        <hr class="my-4">
+        <div class="mt-3">
+          <label for="manualCode" class="form-label"><i class="fas fa-keyboard"></i> Or enter code manually:</label>
+          <div class="input-group">
+            <input type="text" id="manualCode" class="form-control" placeholder="Paste QR code text here">
+            <button class="btn btn-primary" onclick="submitManualCode()">
+              <i class="fas fa-paper-plane"></i> Submit
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
-let currentSessionId = null;
+  let currentSessionId = null;
+  let qrReader = null;
+  let currentLocation = null;
+  let isSubmitting = false;
+  let refreshInterval = null;
+  let expiryCheckInterval = null;
 
-function startQrScanner(sessionId) {
-  currentSessionId = sessionId;  // store session ID globally
-  const qrReader = new Html5Qrcode("qr-reader");
-
-  qrReader.start(
-    { facingMode: "environment" }, // back camera
-    { fps: 10, qrbox: 250 },
-    (qrCodeMessage) => {
-      sendAttendance(qrCodeMessage);
-      qrReader.stop();
-      bootstrap.Modal.getInstance(document.getElementById("qrScannerModal")).hide();
-    },
-    (errorMessage) => {
-      console.log("QR scan error:", errorMessage);
-    }
-  );
-}
-
-function submitManualCode() {
-  const code = document.getElementById("manualCode").value;
-  if (!code) {
-    alert("Please enter a code.");
-    return;
-  }
-  sendAttendance(code);
-}
-
-function sendAttendance(qrData) {
-  fetch(`/scanner/mark-attendance/${currentSessionId}/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-CSRFToken": getCookie("csrftoken")
-    },
-    body: JSON.stringify({ qr_data: qrData })
-  })
-  .then(response => {
-    if (response.ok) {
-      alert("Attendance marked successfully!");
-      bootstrap.Modal.getInstance(document.getElementById('qrScannerModal')).hide();
+  // Calculate attendance rate
+  function calculateAttendanceRate() {
+    const totalRecords = {{ attendance|length }};
+    const totalCourses = {{ courses|length }};
+    if (totalCourses > 0 && totalRecords > 0) {
+      // Simple calculation - can be customized based on your logic
+      const rate = Math.min(Math.round((totalRecords / (totalCourses * 10)) * 100), 100);
+      document.getElementById('attendanceRate').textContent = rate + '%';
     } else {
-      alert("Invalid QR code. Try again.");
+      document.getElementById('attendanceRate').textContent = '0%';
     }
-  });
-}
+  }
 
-// Helper to get CSRF token
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== "") {
-    const cookies = document.cookie.split(";");
-    for (let cookie of cookies) {
-      cookie = cookie.trim();
-      if (cookie.substring(0, name.length + 1) === name + "=") {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-        break;
+  // Scroll to section
+  function scrollToSection(sectionId) {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  // Check and remove expired sessions
+  function checkExpiredSessions() {
+    const now = new Date();
+    const sessionItems = document.querySelectorAll('#activeSessionsList .session-item');
+    let removedCount = 0;
+    
+    sessionItems.forEach(item => {
+      const expiryStr = item.dataset.sessionExpiry;
+      if (expiryStr) {
+        const expiryTime = new Date(expiryStr);
+        if (expiryTime < now && !item.classList.contains('removing')) {
+          item.classList.add('removing');
+          removedCount++;
+          
+          setTimeout(() => {
+            if (item && item.parentNode) {
+              item.remove();
+              updateActiveSessionsCount();
+            }
+          }, 300);
+        }
+      }
+    });
+    
+    // Show empty state if no sessions left
+    setTimeout(() => {
+      const remainingSessions = document.querySelectorAll('#activeSessionsList .session-item').length;
+      if (remainingSessions === 0) {
+        const container = document.getElementById('activeSessionsList');
+        if (container && container.children.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <i class="fas fa-chalkboard"></i>
+              <p>No active sessions available</p>
+              <small class="text-muted">Check back when your lecturer starts a session</small>
+            </div>
+          `;
+        }
+      }
+    }, 350);
+  }
+
+  // Update active sessions count
+  function updateActiveSessionsCount() {
+    const count = document.querySelectorAll('#activeSessionsList .session-item').length;
+    const countElement = document.getElementById('activeSessionsCount');
+    if (countElement) {
+      countElement.textContent = count;
+    }
+  }
+
+  // Get device location
+  function getLocation() {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation not supported'));
+        return;
+      }
+      
+      const locationStatus = document.getElementById('locationStatus');
+      if (locationStatus) {
+        locationStatus.textContent = '📍 Getting location...';
+        locationStatus.className = 'badge bg-warning ms-2';
+      }
+      
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            lat: position.coords.latitude,
+            lon: position.coords.longitude
+          });
+        },
+        (error) => {
+          let errorMsg = 'Location access denied';
+          if (error.code === 1) errorMsg = 'Please allow location access';
+          else if (error.code === 2) errorMsg = 'Location unavailable';
+          else if (error.code === 3) errorMsg = 'Location timeout';
+          reject(new Error(errorMsg));
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    });
+  }
+
+  async function requestCameraAndScan(sessionId) {
+    const sessionElement = document.querySelector(`.session-item[data-session-id="${sessionId}"]`);
+    if (!sessionElement) {
+      showNotification('This session has ended or expired', 'danger');
+      return;
+    }
+    
+    currentSessionId = sessionId;
+    
+    try {
+      currentLocation = await getLocation();
+      const locationStatus = document.getElementById('locationStatus');
+      if (locationStatus) {
+        locationStatus.textContent = '✅ Location ready';
+        locationStatus.className = 'badge bg-success ms-2';
+      }
+    } catch (error) {
+      console.error('Location error:', error);
+      const locationStatus = document.getElementById('locationStatus');
+      if (locationStatus) {
+        locationStatus.textContent = '⚠️ ' + error.message;
+        locationStatus.className = 'badge bg-danger ms-2';
+      }
+      
+      if (confirm('Location access is required for attendance. Would you like to enable it?')) {
+        return;
       }
     }
+    
+    const loadingMsg = document.getElementById('loadingMessage');
+    
+    if (!qrReader) {
+      qrReader = new Html5Qrcode("qr-reader");
+    }
+    
+    if (loadingMsg) loadingMsg.style.display = 'block';
+    
+    const config = {
+      fps: 10,
+      qrbox: { width: 250, height: 250 },
+      aspectRatio: 1.0
+    };
+    
+    try {
+      await qrReader.start(
+        { facingMode: "environment" },
+        config,
+        (decodedText) => {
+          if (loadingMsg) loadingMsg.style.display = 'none';
+          sendAttendance(decodedText);
+          qrReader.stop();
+          const modal = bootstrap.Modal.getInstance(document.getElementById('qrScannerModal'));
+          if (modal) modal.hide();
+        },
+        (errorMessage) => {
+          if (!errorMessage.includes('No MultiFormat Readers')) {
+            console.debug('Scan error:', errorMessage);
+          }
+        }
+      );
+    } catch (err) {
+      console.error('Camera error:', err);
+      if (loadingMsg) {
+        loadingMsg.innerHTML = '<span class="text-danger">❌ Camera access denied or not available</span>';
+      }
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('qrScannerModal'));
+    modal.show();
   }
-  return cookieValue;
-}
+
+  function submitManualCode() {
+    const code = document.getElementById('manualCode').value.trim();
+    if (!code) {
+      alert('Please enter or paste the QR code text.');
+      return;
+    }
+    sendAttendance(code);
+  }
+
+  async function sendAttendance(qrData) {
+    if (isSubmitting) {
+      alert('Please wait, submitting...');
+      return;
+    }
+    
+    const sessionElement = document.querySelector(`.session-item[data-session-id="${currentSessionId}"]`);
+    if (!sessionElement) {
+      showNotification('This session has ended or expired', 'danger');
+      const modal = bootstrap.Modal.getInstance(document.getElementById('qrScannerModal'));
+      if (modal) modal.hide();
+      return;
+    }
+    
+    isSubmitting = true;
+    
+    const submitBtn = document.querySelector('#qrScannerModal .btn-primary');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="loading-spinner"></span> Submitting...';
+    }
+    
+    const payload = {
+      qr_data: qrData,
+      device_info: navigator.userAgent
+    };
+    
+    if (currentLocation) {
+      payload.latitude = currentLocation.lat;
+      payload.longitude = currentLocation.lon;
+    }
+    
+    try {
+      const response = await fetch(`/scanner/mark-attendance/${currentSessionId}/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        showNotification(`✅ ${data.message}`, 'success');
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        showNotification(`❌ ${data.error}`, 'danger');
+        if (data.error && (data.error.includes('expired') || data.error.includes('active'))) {
+          const sessionElem = document.querySelector(`.session-item[data-session-id="${currentSessionId}"]`);
+          if (sessionElem && !sessionElem.classList.contains('removing')) {
+            sessionElem.classList.add('removing');
+            setTimeout(() => {
+              if (sessionElem && sessionElem.parentNode) sessionElem.remove();
+              updateActiveSessionsCount();
+            }, 300);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      showNotification('Network error. Please try again.', 'danger');
+    } finally {
+      isSubmitting = false;
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit';
+      }
+      currentLocation = null;
+    }
+  }
+
+  function showNotification(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type} alert-dismissible fade show`;
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      min-width: 300px;
+      animation: slideInRight 0.3s ease-out;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    `;
+    toast.innerHTML = `
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      if (toast && toast.remove) toast.remove();
+    }, 4000);
+  }
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  async function refreshActiveSessions() {
+    try {
+      const response = await fetch('/scanner/active-sessions/');
+      const serverSessions = await response.json();
+      const serverSessionIds = new Set(serverSessions.map(s => s.id.toString()));
+      
+      const currentSessions = document.querySelectorAll('#activeSessionsList .session-item');
+      let removedCount = 0;
+      
+      currentSessions.forEach(session => {
+        const sessionId = session.dataset.sessionId;
+        if (!serverSessionIds.has(sessionId) && !session.classList.contains('removing')) {
+          session.classList.add('removing');
+          removedCount++;
+          setTimeout(() => {
+            if (session && session.parentNode) session.remove();
+            updateActiveSessionsCount();
+          }, 300);
+        }
+      });
+      
+      setTimeout(() => {
+        updateActiveSessionsCount();
+        const remainingSessions = document.querySelectorAll('#activeSessionsList .session-item').length;
+        if (remainingSessions === 0) {
+          const container = document.getElementById('activeSessionsList');
+          if (container && container.children.length === 0 && !container.innerHTML.includes('empty-state')) {
+            container.innerHTML = `
+              <div class="empty-state">
+                <i class="fas fa-chalkboard"></i>
+                <p>No active sessions available</p>
+                <small class="text-muted">Check back when your lecturer starts a session</small>
+              </div>
+            `;
+          }
+        }
+      }, 350);
+      
+    } catch (error) {
+      console.error('Refresh error:', error);
+    }
+  }
+
+  // Initialize
+  document.addEventListener('DOMContentLoaded', () => {
+    calculateAttendanceRate();
+    
+    expiryCheckInterval = setInterval(checkExpiredSessions, 5000);
+    refreshInterval = setInterval(refreshActiveSessions, 10000);
+    checkExpiredSessions();
+  });
+
+  // Cleanup
+  window.addEventListener('beforeunload', () => {
+    if (refreshInterval) clearInterval(refreshInterval);
+    if (expiryCheckInterval) clearInterval(expiryCheckInterval);
+    if (qrReader) {
+      qrReader.stop().catch(console.error);
+    }
+  });
 </script>
 {% endblock %}

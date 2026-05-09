@@ -1,55 +1,439 @@
 {% extends 'base.html' %}
-{% block content %}
-<div class="container mt-5">
-  <div class="row justify-content-center">
-    <div class="col-md-10">
-      <div class="card shadow-lg border-0">
-        <div class="row g-0">
-          <!-- Left illustration -->
-          <div class="col-md-6 d-flex align-items-center justify-content-center bg-light">
-            <img src="https://cdn-icons-png.flaticon.com/512/747/747376.png"
-                 alt="Login Illustration" class="img-fluid" style="max-height:350px;">
-          </div>
-          <!-- Right form -->
-          <div class="col-md-6 p-5">
-            <h3 class="mb-4 text-center">Sign In</h3>
+{% load static %}
 
-            <!-- Show errors -->
+{% block content %}
+<style>
+  :root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --card-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    --transition: all 0.3s ease;
+  }
+
+  body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+  }
+
+  .login-card {
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+    transition: var(--transition);
+  }
+
+  .login-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.2);
+  }
+
+  .illustration-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .illustration-section::before {
+    content: '';
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+    animation: pulse 4s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.3; }
+    50% { transform: scale(1.1); opacity: 0.5; }
+  }
+
+  .illustration-image {
+    position: relative;
+    z-index: 1;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+
+  .form-section {
+    padding: 2.5rem;
+    background: white;
+  }
+
+  .form-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-subtitle {
+    color: #666;
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+    position: relative;
+  }
+
+  .form-group label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+    display: block;
+    font-size: 0.9rem;
+  }
+
+  .form-group label i {
+    color: #667eea;
+    margin-right: 0.5rem;
+  }
+
+  .input-group {
+    position: relative;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: var(--transition);
+  }
+
+  .form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .form-control.error {
+    border-color: #dc3545;
+  }
+
+  .toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #888;
+    transition: var(--transition);
+  }
+
+  .toggle-password:hover {
+    color: #667eea;
+  }
+
+  .form-check {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .form-check-label {
+    color: #666;
+    cursor: pointer;
+  }
+
+  .form-check-input {
+    width: 18px;
+    height: 18px;
+    margin-right: 0.5rem;
+    cursor: pointer;
+    accent-color: #667eea;
+  }
+
+  .forgot-password {
+    color: #667eea;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: var(--transition);
+  }
+
+  .forgot-password:hover {
+    text-decoration: underline;
+  }
+
+  .btn-login {
+    background: var(--primary-gradient);
+    color: white;
+    padding: 0.75rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: var(--transition);
+    border: none;
+    width: 100%;
+    cursor: pointer;
+  }
+
+  .btn-login:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+  }
+
+  .btn-login:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .register-link {
+    text-align: center;
+    margin-top: 1.5rem;
+    color: #666;
+  }
+
+  .register-link a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .register-link a:hover {
+    text-decoration: underline;
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 1.5rem 0;
+  }
+
+  .divider::before,
+  .divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .divider span {
+    padding: 0 1rem;
+    color: #888;
+    font-size: 0.85rem;
+  }
+
+  .social-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+
+  .social-btn {
+    flex: 1;
+    padding: 0.6rem;
+    border-radius: 12px;
+    border: 2px solid #e0e0e0;
+    background: white;
+    transition: var(--transition);
+    cursor: pointer;
+  }
+
+  .social-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .social-btn i {
+    font-size: 1.2rem;
+  }
+
+  .social-btn.google i { color: #db4437; }
+  .social-btn.github i { color: #333; }
+  .social-btn.microsoft i { color: #00a4ef; }
+
+  .alert-danger {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    border: none;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .alert-danger ul {
+    margin: 0;
+    padding-left: 1.5rem;
+  }
+
+  .loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 0.6s linear infinite;
+    margin-right: 0.5rem;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Demo Credentials Card */
+  .demo-credentials {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-top: 1rem;
+    border-left: 3px solid #667eea;
+  }
+
+  .demo-credentials p {
+    margin: 0;
+    font-size: 0.8rem;
+  }
+
+  .demo-credentials strong {
+    color: #667eea;
+  }
+
+  @media (max-width: 768px) {
+    .form-section {
+      padding: 1.5rem;
+    }
+    
+    .social-buttons {
+      flex-direction: column;
+    }
+    
+    .form-check {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>
+
+<div class="container mt-5 mb-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="login-card">
+        <div class="row g-0">
+          <!-- Left Illustration -->
+          <div class="col-md-6 illustration-section">
+            <div class="text-center">
+              <img src="https://cdn-icons-png.flaticon.com/512/747/747376.png"
+                   alt="Login Illustration" 
+                   class="illustration-image img-fluid"
+                   style="max-height: 280px;">
+              <div class="mt-4 text-white">
+                <h4 class="text-white">Welcome Back!</h4>
+                <p class="text-white-50">Sign in to access your dashboard</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Right Form -->
+          <div class="col-md-6 form-section">
+            <div class="text-center">
+              <h3 class="form-title">Sign In</h3>
+              <p class="form-subtitle">to continue to Attendance System</p>
+            </div>
+
+            <!-- Error Messages -->
             {% if form.errors %}
-              <div class="alert alert-danger">
-                <ul>
+              <div class="alert-danger">
+                <strong><i class="fas fa-exclamation-triangle me-2"></i>Authentication Failed:</strong>
+                <ul class="mt-2 mb-0">
                   {% for field, errors in form.errors.items %}
                     {% for error in errors %}
-                      <li>{{ field|capfirst }}: {{ error }}</li>
+                      <li>{{ error }}</li>
                     {% endfor %}
                   {% endfor %}
                 </ul>
               </div>
             {% endif %}
 
-            <form method="post">
+            <!-- Login Form -->
+            <form method="post" id="loginForm">
               {% csrf_token %}
-              <div class="mb-3">{{ form.username.label_tag }} {{ form.username }}</div>
-              <div class="mb-3">{{ form.password.label_tag }} {{ form.password }}</div>
-
-              <div class="form-check mb-3">
-                <input class="form-check-input" type="checkbox">
-                <label class="form-check-label">Remember me</label>
+              
+              <!-- Username -->
+              <div class="form-group">
+                <label for="{{ form.username.id_for_label }}">
+                  <i class="fas fa-user"></i> Username or Email
+                </label>
+                <input type="text" 
+                       name="username" 
+                       class="form-control" 
+                       id="id_username"
+                       placeholder="Enter your username or email"
+                       required
+                       autofocus>
               </div>
 
-              <button type="submit" class="btn btn-success w-100">Login</button>
+              <!-- Password -->
+              <div class="form-group">
+                <label for="{{ form.password.id_for_label }}">
+                  <i class="fas fa-lock"></i> Password
+                </label>
+                <div class="input-group">
+                  <input type="password" 
+                         name="password" 
+                         class="form-control" 
+                         id="id_password"
+                         placeholder="Enter your password"
+                         required>
+                  <span class="toggle-password" onclick="togglePassword('id_password', this)">
+                    <i class="fas fa-eye-slash"></i>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Remember Me & Forgot Password -->
+              <div class="form-check">
+                <div>
+                  <input type="checkbox" class="form-check-input" id="rememberMe" name="remember_me">
+                  <label class="form-check-label" for="rememberMe">Remember me</label>
+                </div>
+                <a href="#" class="forgot-password" onclick="showForgotPasswordMessage(event)">
+                  <i class="fas fa-key"></i> Forgot password?
+                </a>
+              </div>
+
+              <!-- Login Button -->
+              <button type="submit" class="btn-login" id="loginBtn">
+                <i class="fas fa-sign-in-alt me-2"></i>Sign In
+              </button>
             </form>
 
-            <p class="mt-3 text-center">
-              Don’t have an account? <a href="{% url 'register' %}">Register here</a>
-            </p>
+            <!-- Register Link -->
+            <div class="register-link">
+              Don't have an account? <a href="{% url 'register' %}">Create one now</a>
+            </div>
 
-            <hr>
-            <p class="text-center">Or login with</p>
-            <div class="d-flex justify-content-center">
-              <a href="#" class="btn btn-outline-primary me-2">Facebook</a>
-              <a href="#" class="btn btn-outline-info me-2">Twitter</a>
-              <a href="#" class="btn btn-outline-danger">Google</a>
+            <!-- Divider -->
+            <div class="divider">
+              <span>OR</span>
+            </div>
+
+            <!-- Social Login (Placeholder) -->
+            <div class="social-buttons">
+              <button class="social-btn google" onclick="showSocialLoginMessage('Google')">
+                <i class="fab fa-google"></i> Google
+              </button>
+              <button class="social-btn github" onclick="showSocialLoginMessage('GitHub')">
+                <i class="fab fa-github"></i> GitHub
+              </button>
+              <button class="social-btn microsoft" onclick="showSocialLoginMessage('Microsoft')">
+                <i class="fab fa-microsoft"></i> Microsoft
+              </button>
             </div>
           </div>
         </div>
@@ -57,4 +441,133 @@
     </div>
   </div>
 </div>
+
+<script>
+  // Toggle password visibility
+  function togglePassword(inputId, element) {
+    const input = document.getElementById(inputId);
+    const icon = element.querySelector('i');
+    
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.classList.remove('fa-eye-slash');
+      icon.classList.add('fa-eye');
+    } else {
+      input.type = 'password';
+      icon.classList.remove('fa-eye');
+      icon.classList.add('fa-eye-slash');
+    }
+  }
+
+  // Show loading state on form submission
+  const form = document.getElementById('loginForm');
+  const loginBtn = document.getElementById('loginBtn');
+  
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      const username = document.getElementById('id_username').value;
+      const password = document.getElementById('id_password').value;
+      
+      if (!username || !password) {
+        e.preventDefault();
+        alert('Please enter both username and password');
+        return;
+      }
+      
+      // Show loading state
+      loginBtn.disabled = true;
+      loginBtn.innerHTML = '<span class="loading-spinner"></span>Signing in...';
+    });
+  }
+
+  // Remember Me functionality
+  const rememberCheckbox = document.getElementById('rememberMe');
+  const usernameInput = document.getElementById('id_username');
+  
+  // Check if remember me was previously checked
+  if (localStorage.getItem('rememberedUsername')) {
+    usernameInput.value = localStorage.getItem('rememberedUsername');
+    if (rememberCheckbox) rememberCheckbox.checked = true;
+  }
+  
+  // Save username if remember me is checked
+  if (rememberCheckbox) {
+    rememberCheckbox.addEventListener('change', function() {
+      if (this.checked) {
+        localStorage.setItem('rememberedUsername', usernameInput.value);
+      } else {
+        localStorage.removeItem('rememberedUsername');
+      }
+    });
+  }
+  
+  // Save username on input if remember me is checked
+  if (usernameInput && rememberCheckbox) {
+    usernameInput.addEventListener('input', function() {
+      if (rememberCheckbox.checked) {
+        localStorage.setItem('rememberedUsername', this.value);
+      }
+    });
+  }
+
+  // Show message for forgot password
+  function showForgotPasswordMessage(event) {
+    event.preventDefault();
+    alert('Please contact your system administrator to reset your password.\n\nOr use demo credentials for testing.');
+  }
+
+  // Show message for social login (placeholder)
+  function showSocialLoginMessage(provider) {
+    alert(`${provider} login is not yet configured.\n\nPlease use traditional login with demo credentials.`);
+  }
+
+  // Add floating label effect
+  document.querySelectorAll('.form-control').forEach(input => {
+    input.addEventListener('focus', function() {
+      this.parentElement.classList.add('focused');
+    });
+    
+    input.addEventListener('blur', function() {
+      if (!this.value) {
+        this.parentElement.classList.remove('focused');
+      }
+    });
+  });
+
+  // Auto-fill demo credentials on click (optional)
+  function fillDemoCredentials(role) {
+    if (role === 'student') {
+      document.getElementById('id_username').value = 'student@university.ac.ke';
+      document.getElementById('id_password').value = 'student123';
+    } else if (role === 'lecturer') {
+      document.getElementById('id_username').value = 'lecturer@university.ac.ke';
+      document.getElementById('id_password').value = 'lecturer123';
+    } else if (role === 'admin') {
+      document.getElementById('id_username').value = 'admin@university.ac.ke';
+      document.getElementById('id_password').value = 'admin123';
+    }
+  }
+
+  // Add click handlers to demo credentials (optional)
+  const demoElements = document.querySelectorAll('.demo-credentials p');
+  demoElements.forEach(el => {
+    el.style.cursor = 'pointer';
+    el.addEventListener('click', function() {
+      if (this.innerText.includes('student')) fillDemoCredentials('student');
+      else if (this.innerText.includes('lecturer')) fillDemoCredentials('lecturer');
+      else if (this.innerText.includes('admin')) fillDemoCredentials('admin');
+    });
+  });
+
+  // Clear form errors on input
+  const inputs = document.querySelectorAll('.form-control');
+  inputs.forEach(input => {
+    input.addEventListener('input', function() {
+      const alertDiv = document.querySelector('.alert-danger');
+      if (alertDiv) {
+        alertDiv.style.display = 'none';
+      }
+    });
+  });
+</script>
 {% endblock %}

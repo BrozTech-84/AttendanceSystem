@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h3>Session Details: {{ session.course.name }}</h3>
+        </div>
+        <div class="card-body">
+            <p><strong>Topic:</strong> {{ session.topic }}</p>
+            <p><strong>Created:</strong> {{ session.created_at|date:"Y-m-d H:i:s" }}</p>
+            <p><strong>QR Expires:</strong> {{ session.qr_expiry|date:"Y-m-d H:i:s" }}</p>
+            <p><strong>Status:</strong> 
+                {% if session.is_active %}
+                    <span class="badge bg-success">Active</span>
+                {% else %}
+                    <span class="badge bg-secondary">Ended</span>
+                {% endif %}
+            </p>
+            {% if session.latitude %}
+            <p><strong>Location:</strong> {{ session.latitude }}, {{ session.longitude }}</p>
+            <p><strong>Allowed Radius:</strong> {{ session.allowed_radius }} meters</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -8,9 +8,21 @@ https://docs.djangoproject.com/en/6.0/howto/deployment/asgi/
 """
 
 import os
+import django
 
+from channels.routing import ProtocolTypeRouter, URLRouter
 from django.core.asgi import get_asgi_application
+from channels.auth import AuthMiddlewareStack
+import StudentScanner.routing
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'AttendanceSystem.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'attendance_system.settings')
+django.setup()
 
-application = get_asgi_application()
+application = ProtocolTypeRouter({
+    "http": get_asgi_application(),
+    "websocket": AuthMiddlewareStack(
+        URLRouter(
+            StudentScanner.routing.websocket_urlpatterns
+        )
+    ),
+})

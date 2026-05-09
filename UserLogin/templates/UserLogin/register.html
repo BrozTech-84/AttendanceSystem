@@ -1,22 +1,330 @@
 {% extends 'base.html' %}
+{% load static %}
+
 {% block content %}
-<div class="container mt-5">
+<style>
+  :root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --card-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    --transition: all 0.3s ease;
+  }
+
+  body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+  }
+
+  .register-card {
+    border-radius: 25px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+    transition: var(--transition);
+  }
+
+  .register-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.2);
+  }
+
+  .illustration-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .illustration-section::before {
+    content: '';
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+    animation: pulse 4s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.3; }
+    50% { transform: scale(1.1); opacity: 0.5; }
+  }
+
+  .illustration-image {
+    position: relative;
+    z-index: 1;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+  }
+
+  .form-section {
+    padding: 2.5rem;
+    background: white;
+  }
+
+  .form-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-subtitle {
+    color: #666;
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group {
+    margin-bottom: 1.25rem;
+    position: relative;
+  }
+
+  .form-group label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+    display: block;
+    font-size: 0.9rem;
+  }
+
+  .form-group label i {
+    color: #667eea;
+    margin-right: 0.5rem;
+  }
+
+  .form-control, .form-select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: var(--transition);
+  }
+
+  .form-control:focus, .form-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .form-control.error, .form-select.error {
+    border-color: #dc3545;
+  }
+
+  .error-message {
+    color: #dc3545;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+  }
+
+  .password-strength {
+    margin-top: 0.5rem;
+  }
+
+  .strength-bar {
+    height: 4px;
+    background: #e0e0e0;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+  }
+
+  .strength-progress {
+    height: 100%;
+    width: 0%;
+    transition: var(--transition);
+  }
+
+  .strength-text {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+  }
+
+  .btn-register {
+    background: var(--primary-gradient);
+    color: white;
+    padding: 0.75rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: var(--transition);
+    border: none;
+    width: 100%;
+    cursor: pointer;
+  }
+
+  .btn-register:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+  }
+
+  .btn-register:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .login-link {
+    text-align: center;
+    margin-top: 1.5rem;
+    color: #666;
+  }
+
+  .login-link a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .login-link a:hover {
+    text-decoration: underline;
+  }
+
+  /* Role Cards */
+  .role-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .role-card {
+    text-align: center;
+    padding: 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .role-card:hover {
+    border-color: #667eea;
+    transform: translateY(-3px);
+  }
+
+  .role-card.selected {
+    border-color: #667eea;
+    background: linear-gradient(135deg, #f8f9ff 0%, #e8eaff 100%);
+  }
+
+  .role-card i {
+    font-size: 2rem;
+    color: #667eea;
+    margin-bottom: 0.5rem;
+  }
+
+  .role-card .role-name {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  .role-card .role-desc {
+    font-size: 0.75rem;
+    color: #888;
+  }
+
+  .programs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.75rem;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 0.5rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+  }
+
+  .program-checkbox {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+  }
+
+  .program-checkbox input {
+    margin-right: 0.5rem;
+    accent-color: #667eea;
+  }
+
+  .alert-danger {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    border: none;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .alert-danger ul {
+    margin: 0;
+    padding-left: 1.5rem;
+  }
+
+  @media (max-width: 768px) {
+    .form-section {
+      padding: 1.5rem;
+    }
+    
+    .role-cards {
+      grid-template-columns: 1fr;
+    }
+    
+    .programs-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Loading Spinner */
+  .loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 0.6s linear infinite;
+    margin-right: 0.5rem;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+</style>
+
+<div class="container mt-5 mb-5">
   <div class="row justify-content-center">
-    <div class="col-md-10">
-      <div class="card shadow-lg border-0">
+    <div class="col-lg-10">
+      <div class="register-card">
         <div class="row g-0">
-          <!-- Left illustration -->
-          <div class="col-md-6 d-flex align-items-center justify-content-center bg-light">
-            <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
-                 alt="Register Illustration" class="img-fluid" style="max-height:350px;">
+          <!-- Left Illustration -->
+          <div class="col-md-6 illustration-section">
+            <div class="text-center">
+              <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                   alt="Register Illustration" 
+                   class="illustration-image img-fluid"
+                   style="max-height: 300px;">
+              <div class="mt-4 text-white">
+                <h4 class="text-white">Join Our Community</h4>
+                <p class="text-white-50">Start your journey with smarter attendance tracking</p>
+              </div>
+            </div>
           </div>
-          <!-- Right form -->
-          <div class="col-md-6 p-5">
-            <h3 class="mb-4 text-center">Sign Up</h3>
+          
+          <!-- Right Form -->
+          <div class="col-md-6 form-section">
+            <div class="text-center">
+              <h3 class="form-title">Create Account</h3>
+              <p class="form-subtitle">Sign up to get started</p>
+            </div>
 
             {% if form.errors %}
-              <div class="alert alert-danger">
-                <ul>
+              <div class="alert-danger">
+                <strong><i class="fas fa-exclamation-triangle me-2"></i>Please correct the following errors:</strong>
+                <ul class="mt-2 mb-0">
                   {% for field, errors in form.errors.items %}
                     {% for error in errors %}
                       <li>{{ field|capfirst }}: {{ error }}</li>
@@ -26,32 +334,106 @@
               </div>
             {% endif %}
 
-            <form method="post">
+            <form method="post" id="registerForm">
               {% csrf_token %}
-              <div class="mb-3">{{ form.username.label_tag }} {{ form.username }}</div>
-              <div class="mb-3">{{ form.email.label_tag }} {{ form.email }}</div>
-
-              <!-- Student program dropdown -->
-              <div class="mb-3" id="student-program-field">
-                {{ form.program.label_tag }} {{ form.program }}
+              
+              <!-- Role Selection Cards -->
+              <div class="form-group">
+                <label><i class="fas fa-user-tag"></i> I am a:</label>
+                <div class="role-cards">
+                  <div class="role-card" data-role="student" onclick="selectRole('student')">
+                    <i class="fas fa-graduation-cap"></i>
+                    <div class="role-name">Student</div>
+                    <div class="role-desc">Mark attendance</div>
+                  </div>
+                  <div class="role-card" data-role="lecturer" onclick="selectRole('lecturer')">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <div class="role-name">Lecturer</div>
+                    <div class="role-desc">Create sessions</div>
+                  </div>
+                  <div class="role-card" data-role="admin" onclick="selectRole('admin')">
+                    <i class="fas fa-user-cog"></i>
+                    <div class="role-name">Admin</div>
+                    <div class="role-desc">Manage system</div>
+                  </div>
+                </div>
+                {{ form.role }}
               </div>
 
-              <!-- Lecturer multiple programs -->
-              <div class="mb-3 d-none" id="lecturer-programs-field">
-                {{ form.programs.label_tag }}
-                {{ form.programs }}
+              <!-- Username -->
+              <div class="form-group">
+                <label for="{{ form.username.id_for_label }}">
+                  <i class="fas fa-user"></i> Username
+                </label>
+                {{ form.username }}
+                <div class="error-message" id="usernameError"></div>
               </div>
 
-              <div class="mb-3">{{ form.role.label_tag }} {{ form.role }}</div>
-              <div class="mb-3">{{ form.password1.label_tag }} {{ form.password1 }}</div>
-              <div class="mb-3">{{ form.password2.label_tag }} {{ form.password2 }}</div>
+              <!-- Email -->
+              <div class="form-group">
+                <label for="{{ form.email.id_for_label }}">
+                  <i class="fas fa-envelope"></i> Email Address
+                </label>
+                {{ form.email }}
+                <div class="error-message" id="emailError"></div>
+              </div>
 
-              <button type="submit" class="btn btn-primary w-100">Register</button>
+              <!-- Student Program -->
+              <div class="form-group" id="student-program-field">
+                <label for="{{ form.program.id_for_label }}">
+                  <i class="fas fa-book"></i> Program
+                </label>
+                {{ form.program }}
+              </div>
+
+              <!-- Lecturer Programs -->
+              <div class="form-group d-none" id="lecturer-programs-field">
+                <label>
+                  <i class="fas fa-layer-group"></i> Programs (Select all that apply)
+                </label>
+                <div class="programs-grid">
+                  {% for program in form.programs.field.queryset %}
+                    <label class="program-checkbox">
+                      <input type="checkbox" name="programs" value="{{ program.id }}">
+                      {{ program.name }} ({{ program.code }})
+                    </label>
+                  {% empty %}
+                    <p class="text-muted">No programs available</p>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <!-- Password -->
+              <div class="form-group">
+                <label for="{{ form.password1.id_for_label }}">
+                  <i class="fas fa-lock"></i> Password
+                </label>
+                {{ form.password1 }}
+                <div class="password-strength">
+                  <div class="strength-bar">
+                    <div class="strength-progress" id="strengthProgress"></div>
+                  </div>
+                  <div class="strength-text" id="strengthText"></div>
+                </div>
+              </div>
+
+              <!-- Confirm Password -->
+              <div class="form-group">
+                <label for="{{ form.password2.id_for_label }}">
+                  <i class="fas fa-check-circle"></i> Confirm Password
+                </label>
+                {{ form.password2 }}
+                <div class="error-message" id="passwordMatchError"></div>
+              </div>
+
+              <button type="submit" class="btn-register" id="registerBtn">
+                <i class="fas fa-user-plus me-2"></i>Create Account
+              </button>
             </form>
 
-            <p class="mt-3 text-center">
-              Already a member? <a href="{% url 'login' %}">Login here</a>
-            </p>
+            <div class="login-link">
+              Already have an account? <a href="{% url 'login' %}">Sign in here</a>
+            </div>
           </div>
         </div>
       </div>
@@ -60,15 +442,38 @@
 </div>
 
 <script>
+  // DOM Elements
   const roleSelect = document.getElementById("id_role");
   const studentField = document.getElementById("student-program-field");
   const lecturerField = document.getElementById("lecturer-programs-field");
+  const roleCards = document.querySelectorAll('.role-card');
+  const password1 = document.getElementById("id_password1");
+  const password2 = document.getElementById("id_password2");
+  const username = document.getElementById("id_username");
+  const email = document.getElementById("id_email");
+  const registerBtn = document.getElementById("registerBtn");
+  const form = document.getElementById("registerForm");
 
+  // Role selection function
+  function selectRole(role) {
+    roleSelect.value = role;
+    roleCards.forEach(card => {
+      if (card.dataset.role === role) {
+        card.classList.add('selected');
+      } else {
+        card.classList.remove('selected');
+      }
+    });
+    toggleProgramFields();
+  }
+
+  // Toggle program fields based on role
   function toggleProgramFields() {
-    if (roleSelect.value === "student") {
+    const role = roleSelect.value;
+    if (role === "student") {
       studentField.classList.remove("d-none");
       lecturerField.classList.add("d-none");
-    } else if (roleSelect.value === "lecturer") {
+    } else if (role === "lecturer") {
       studentField.classList.add("d-none");
       lecturerField.classList.remove("d-none");
     } else {
@@ -77,7 +482,185 @@
     }
   }
 
-  roleSelect.addEventListener("change", toggleProgramFields);
-  toggleProgramFields(); // run on page load
+  // Password strength checker
+  function checkPasswordStrength(password) {
+    let strength = 0;
+    let message = '';
+    let color = '#dc3545';
+    let width = '0%';
+
+    if (password.length === 0) {
+      return { message: '', color: '#e0e0e0', width: '0%' };
+    }
+
+    if (password.length >= 8) strength += 20;
+    if (password.match(/[a-z]/)) strength += 20;
+    if (password.match(/[A-Z]/)) strength += 20;
+    if (password.match(/[0-9]/)) strength += 20;
+    if (password.match(/[^a-zA-Z0-9]/)) strength += 20;
+
+    if (strength < 40) {
+      message = 'Weak';
+      color = '#dc3545';
+      width = '25%';
+    } else if (strength < 70) {
+      message = 'Medium';
+      color = '#ffc107';
+      width = '50%';
+    } else if (strength < 90) {
+      message = 'Strong';
+      color = '#28a745';
+      width = '75%';
+    } else {
+      message = 'Very Strong';
+      color = '#28a745';
+      width = '100%';
+    }
+
+    return { message, color, width };
+  }
+
+  // Real-time password strength update
+  if (password1) {
+    password1.addEventListener('input', function() {
+      const strength = checkPasswordStrength(this.value);
+      const progressBar = document.getElementById('strengthProgress');
+      const strengthText = document.getElementById('strengthText');
+      
+      if (progressBar) {
+        progressBar.style.width = strength.width;
+        progressBar.style.backgroundColor = strength.color;
+      }
+      if (strengthText) {
+        strengthText.textContent = strength.message;
+        strengthText.style.color = strength.color;
+      }
+      
+      // Check password match
+      if (password2.value) checkPasswordMatch();
+    });
+  }
+
+  // Check if passwords match
+  function checkPasswordMatch() {
+    const passwordMatchError = document.getElementById('passwordMatchError');
+    if (password1.value !== password2.value) {
+      passwordMatchError.textContent = 'Passwords do not match';
+      return false;
+    } else if (password2.value.length > 0) {
+      passwordMatchError.textContent = '';
+      return true;
+    }
+    return false;
+  }
+
+  if (password2) {
+    password2.addEventListener('input', checkPasswordMatch);
+  }
+
+  // Validate username (no special characters, min length)
+  function validateUsername() {
+    const usernameError = document.getElementById('usernameError');
+    const value = username.value;
+    
+    if (value.length < 3) {
+      usernameError.textContent = 'Username must be at least 3 characters';
+      return false;
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(value)) {
+      usernameError.textContent = 'Username can only contain letters, numbers, and underscores';
+      return false;
+    }
+    usernameError.textContent = '';
+    return true;
+  }
+
+  // Validate email format
+  function validateEmail() {
+    const emailError = document.getElementById('emailError');
+    const value = email.value;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    if (!emailRegex.test(value)) {
+      emailError.textContent = 'Please enter a valid email address';
+      return false;
+    }
+    emailError.textContent = '';
+    return true;
+  }
+
+  if (username) username.addEventListener('input', validateUsername);
+  if (email) email.addEventListener('input', validateEmail);
+
+  // Form submission with validation
+  form.addEventListener('submit', function(e) {
+    let isValid = true;
+    
+    // Validate username
+    if (!validateUsername()) isValid = false;
+    
+    // Validate email
+    if (!validateEmail()) isValid = false;
+    
+    // Validate password match
+    if (!checkPasswordMatch()) isValid = false;
+    
+    // Validate role selection
+    if (!roleSelect.value) {
+      alert('Please select a role (Student, Lecturer, or Admin)');
+      isValid = false;
+    }
+    
+    // Validate program selection for lecturer
+    if (roleSelect.value === 'lecturer') {
+      const selectedPrograms = document.querySelectorAll('input[name="programs"]:checked');
+      if (selectedPrograms.length === 0) {
+        alert('Please select at least one program for your courses');
+        isValid = false;
+      }
+    }
+    
+    if (!isValid) {
+      e.preventDefault();
+      return;
+    }
+    
+    // Show loading state
+    registerBtn.disabled = true;
+    registerBtn.innerHTML = '<span class="loading-spinner"></span>Creating account...';
+  });
+
+  // Initialize
+  toggleProgramFields();
+  
+  // Set default role if none selected
+  if (!roleSelect.value) {
+    roleSelect.value = 'student';
+    selectRole('student');
+  }
+  
+  // Add floating label effect
+  document.querySelectorAll('.form-control, .form-select').forEach(input => {
+    input.addEventListener('focus', function() {
+      this.parentElement.classList.add('focused');
+    });
+    
+    input.addEventListener('blur', function() {
+      if (!this.value) {
+        this.parentElement.classList.remove('focused');
+      }
+    });
+  });
+
+  // Email domain suggestions (optional)
+  const emailDomains = ['@student.university.ac.ke', '@lecturer.university.ac.ke', '@gmail.com', '@yahoo.com'];
+  if (email) {
+    email.addEventListener('keydown', function(e) {
+      if (e.key === '@') {
+        // Could show domain suggestions here
+        console.log('Email domain suggestions available');
+      }
+    });
+  }
 </script>
 {% endblock %}
