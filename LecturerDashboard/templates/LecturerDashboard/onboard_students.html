@@ -1,7 +1,4 @@
-{% extends 'base.html' %}
-{% load static %}
-
-{% block content %}
+{% extends 'base.html' %} {% load static %} {% block content %}
 <style>
   :root {
     --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -204,6 +201,15 @@
     color: #888;
   }
 
+  .student-role-badge {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 20px;
+    background: #e3f2fd;
+    color: #1976d2;
+    display: inline-block;
+  }
+
   .student-status {
     font-size: 0.75rem;
     padding: 0.25rem 0.5rem;
@@ -270,7 +276,9 @@
   }
 
   @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   .empty-state {
@@ -285,26 +293,35 @@
     opacity: 0.3;
   }
 
+  .alert-warning {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    color: #856404;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
   @media (max-width: 768px) {
     .page-header h2 {
       font-size: 1.5rem;
     }
-    
+
     .student-item {
       flex-wrap: wrap;
     }
-    
+
     .student-avatar {
       width: 40px;
       height: 40px;
       font-size: 1rem;
     }
-    
+
     .form-actions {
       flex-direction: column;
       gap: 1rem;
     }
-    
+
     .form-actions button,
     .form-actions a {
       width: 100%;
@@ -369,21 +386,41 @@
     </div>
   </div>
 
+  <!-- Messages -->
+  {% if messages %} {% for message in messages %}
+  <div
+    class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show"
+    role="alert"
+  >
+    {{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %} {% endif %}
+
   <!-- Statistics Card -->
   <div class="stats-card">
     <div class="row">
       <div class="col-md-4 mb-3 mb-md-0">
-        <h5><i class="fas fa-users text-primary me-2"></i>Total Students Available</h5>
-        <div class="stats-number" id="totalStudents">{{ students|length }}</div>
-        <small class="text-muted">In {{ course.programs.first.name }} program</small>
+        <h5>
+          <i class="fas fa-users text-primary me-2"></i>Total Students Available
+        </h5>
+        <div class="stats-number" id="totalStudents">{{ total_students }}</div>
+        <small class="text-muted">
+          <i class="fas fa-graduation-cap me-1"></i>
+          Only users with Student role
+        </small>
       </div>
       <div class="col-md-4 mb-3 mb-md-0">
-        <h5><i class="fas fa-user-check text-success me-2"></i>Selected Students</h5>
+        <h5>
+          <i class="fas fa-user-check text-success me-2"></i>Selected Students
+        </h5>
         <div class="stats-number" id="selectedCount">0</div>
         <small class="text-muted">To be enrolled</small>
       </div>
       <div class="col-md-4">
-        <h5><i class="fas fa-chart-line text-info me-2"></i>Currently Enrolled</h5>
+        <h5>
+          <i class="fas fa-chart-line text-info me-2"></i>Currently Enrolled
+        </h5>
         <div class="stats-number">{{ course.students.count }}</div>
         <small class="text-muted">Already in this course</small>
       </div>
@@ -397,25 +434,41 @@
         <i class="fas fa-list-ul"></i>
         Select Students to Enroll
       </h4>
+      <p class="text-muted mb-0 mt-2 small">
+        <i class="fas fa-info-circle"></i>
+        Only users with the <strong>"Student" role</strong> are shown. Admins
+        and Lecturers are automatically excluded.
+      </p>
     </div>
 
     <form method="post" id="onboardForm">
       {% csrf_token %}
-      
+
       <!-- Search Bar -->
       <div class="search-bar">
-        <input type="text" 
-               class="search-input" 
-               id="searchStudents" 
-               placeholder="🔍 Search students by name or email...">
+        <input
+          type="text"
+          class="search-input"
+          id="searchStudents"
+          placeholder="🔍 Search students by name or email..."
+          value="{{ search_query }}"
+        />
       </div>
 
       <!-- Batch Actions -->
       <div class="batch-actions">
-        <button type="button" class="batch-btn batch-btn-primary me-2" onclick="selectAll()">
+        <button
+          type="button"
+          class="batch-btn batch-btn-primary me-2"
+          onclick="selectAll()"
+        >
           <i class="fas fa-check-double me-1"></i> Select All
         </button>
-        <button type="button" class="batch-btn batch-btn-secondary" onclick="deselectAll()">
+        <button
+          type="button"
+          class="batch-btn batch-btn-secondary"
+          onclick="deselectAll()"
+        >
           <i class="fas fa-times me-1"></i> Deselect All
         </button>
       </div>
@@ -423,38 +476,60 @@
       <!-- Students List -->
       <div class="students-list" id="studentsList">
         {% for student in students %}
-          <div class="student-item" data-student-id="{{ student.id }}" data-student-name="{{ student.username|lower }} {{ student.email|lower }}">
-            <input type="checkbox" 
-                   name="students" 
-                   value="{{ student.id }}" 
-                   id="student_{{ student.id }}" 
-                   class="student-checkbox"
-                   onchange="updateSelectedCount()">
-            <div class="student-avatar">
-              {{ student.username|first|upper }}
+        <div
+          class="student-item"
+          data-student-id="{{ student.id }}"
+          data-student-name="{{ student.username|lower }} {{ student.email|lower }}"
+        >
+          <input
+            type="checkbox"
+            name="students"
+            value="{{ student.id }}"
+            id="student_{{ student.id }}"
+            class="student-checkbox"
+            {%
+            if
+            student.id
+            in
+            enrolled_ids
+            %}disabled{%
+            endif
+            %}
+          />
+          <div class="student-avatar">{{ student.username|first|upper }}</div>
+          <div class="student-info">
+            <div class="student-name">
+              {{ student.get_full_name|default:student.username }}
+              <span class="student-role-badge ms-2">
+                <i class="fas fa-graduation-cap"></i> Student
+              </span>
             </div>
-            <div class="student-info">
-              <div class="student-name">{{ student.get_full_name|default:student.username }}</div>
-              <div class="student-email">{{ student.email }}</div>
-            </div>
-            <div>
-              {% if student in course.students.all %}
-                <span class="student-status">
-                  <i class="fas fa-check-circle"></i> Already Enrolled
-                </span>
-              {% else %}
-                <span class="student-status" style="background: #fff3e0; color: #ff9800;">
-                  <i class="fas fa-clock"></i> Pending
-                </span>
-              {% endif %}
-            </div>
+            <div class="student-email">{{ student.email }}</div>
           </div>
+          <div>
+            {% if student.id in enrolled_ids %}
+            <span class="student-status">
+              <i class="fas fa-check-circle"></i> Already Enrolled
+            </span>
+            {% else %}
+            <span
+              class="student-status"
+              style="background: #fff3e0; color: #ff9800"
+            >
+              <i class="fas fa-clock"></i> Pending
+            </span>
+            {% endif %}
+          </div>
+        </div>
         {% empty %}
-          <div class="empty-state">
-            <i class="fas fa-user-slash"></i>
-            <p>No students found in this program.</p>
-            <small class="text-muted">Please ensure students are registered in the {{ course.programs.first.name }} program.</small>
-          </div>
+        <div class="empty-state">
+          <i class="fas fa-user-slash"></i>
+          <p>No students found.</p>
+          <small class="text-muted">
+            Only users with the <strong>"Student" role</strong> appear here.<br />
+            Make sure students have registered with role='student'.
+          </small>
+        </div>
         {% endfor %}
       </div>
 
@@ -471,157 +546,135 @@
       </div>
     </form>
   </div>
-
-  <!-- Help Section -->
-  <div class="row mt-4">
-    <div class="col-12">
-      <div class="alert alert-info" style="background: #e7f3ff; border: none; border-radius: 12px;">
-        <i class="fas fa-lightbulb fa-lg me-3"></i>
-        <strong>Quick Tips:</strong>
-        <ul class="mt-2 mb-0">
-          <li>Use the search bar to quickly find specific students</li>
-          <li>Students already enrolled will be marked with a green badge</li>
-          <li>Selected students will be highlighted in blue</li>
-          <li>You can select/deselect all students using the batch actions</li>
-        </ul>
-      </div>
-    </div>
-  </div>
 </div>
 
 <script>
   let selectedCount = 0;
-  const totalStudents = {{ students|length }};
-  const selectedCountElement = document.getElementById('selectedCount');
-  
+  const selectedCountElement = document.getElementById("selectedCount");
+
   function updateSelectedCount() {
-    const checkboxes = document.querySelectorAll('.student-checkbox:checked');
+    const checkboxes = document.querySelectorAll(
+      ".student-checkbox:checked:not(:disabled)",
+    );
     selectedCount = checkboxes.length;
-    selectedCountElement.textContent = selectedCount;
-    
-    // Update submit button state
-    const submitBtn = document.getElementById('submitBtn');
+    if (selectedCountElement) {
+      selectedCountElement.textContent = selectedCount;
+    }
+
+    const submitBtn = document.getElementById("submitBtn");
     if (submitBtn) {
-      if (selectedCount === 0) {
-        submitBtn.disabled = true;
-      } else {
-        submitBtn.disabled = false;
-      }
+      submitBtn.disabled = selectedCount === 0;
     }
   }
-  
+
   function selectAll() {
-    const checkboxes = document.querySelectorAll('.student-checkbox');
-    checkboxes.forEach(checkbox => {
-      if (!checkbox.disabled) {
-        checkbox.checked = true;
-        highlightStudent(checkbox.closest('.student-item'), true);
-      }
+    const checkboxes = document.querySelectorAll(
+      ".student-checkbox:not(:disabled)",
+    );
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = true;
+      highlightStudent(checkbox.closest(".student-item"), true);
     });
     updateSelectedCount();
   }
-  
+
   function deselectAll() {
-    const checkboxes = document.querySelectorAll('.student-checkbox');
-    checkboxes.forEach(checkbox => {
+    const checkboxes = document.querySelectorAll(
+      ".student-checkbox:not(:disabled)",
+    );
+    checkboxes.forEach((checkbox) => {
       checkbox.checked = false;
-      highlightStudent(checkbox.closest('.student-item'), false);
+      highlightStudent(checkbox.closest(".student-item"), false);
     });
     updateSelectedCount();
   }
-  
+
   function highlightStudent(studentItem, isSelected) {
     if (studentItem) {
       if (isSelected) {
-        studentItem.classList.add('selected');
+        studentItem.classList.add("selected");
       } else {
-        studentItem.classList.remove('selected');
+        studentItem.classList.remove("selected");
       }
     }
   }
-  
+
   // Search functionality
-  const searchInput = document.getElementById('searchStudents');
+  const searchInput = document.getElementById("searchStudents");
   if (searchInput) {
-    searchInput.addEventListener('input', function(e) {
+    searchInput.addEventListener("input", function (e) {
       const searchTerm = e.target.value.toLowerCase();
-      const studentItems = document.querySelectorAll('.student-item');
-      
-      studentItems.forEach(item => {
-        const studentName = item.getAttribute('data-student-name') || '';
-        if (studentName.includes(searchTerm) || searchTerm === '') {
-          item.style.display = 'flex';
+      const studentItems = document.querySelectorAll(".student-item");
+
+      studentItems.forEach((item) => {
+        const studentName = item.getAttribute("data-student-name") || "";
+        if (studentName.includes(searchTerm)) {
+          item.style.display = "";
         } else {
-          item.style.display = 'none';
+          item.style.display = "none";
         }
       });
     });
   }
-  
-  // Add click event to student items for better UX
-  const studentItems = document.querySelectorAll('.student-item');
-  studentItems.forEach(item => {
-    const checkbox = item.querySelector('.student-checkbox');
-    
-    item.addEventListener('click', (e) => {
-      // Don't toggle if clicking directly on the checkbox
-      if (e.target.type !== 'checkbox') {
-        checkbox.checked = !checkbox.checked;
+
+  // Add click event to student items
+  const studentItems = document.querySelectorAll(".student-item");
+  studentItems.forEach((item) => {
+    const checkbox = item.querySelector(".student-checkbox");
+
+    // Skip if checkbox is disabled
+    if (checkbox && !checkbox.disabled) {
+      item.addEventListener("click", (e) => {
+        if (e.target.type !== "checkbox") {
+          checkbox.checked = !checkbox.checked;
+          updateSelectedCount();
+          highlightStudent(item, checkbox.checked);
+        }
+      });
+
+      checkbox.addEventListener("change", function () {
         updateSelectedCount();
-        highlightStudent(item, checkbox.checked);
-      }
-    });
-    
-    // Highlight initially checked items
-    if (checkbox.checked) {
-      highlightStudent(item, true);
+        highlightStudent(item, this.checked);
+      });
     }
-    
-    // Add change event listener
-    checkbox.addEventListener('change', function() {
-      updateSelectedCount();
-      highlightStudent(item, this.checked);
-    });
   });
-  
-  // Form submission with loading state
-  const form = document.getElementById('onboardForm');
-  const submitBtn = document.getElementById('submitBtn');
-  
+
+  // Form submission
+  const form = document.getElementById("onboardForm");
+  const submitBtn = document.getElementById("submitBtn");
+
   if (form && submitBtn) {
-    form.addEventListener('submit', function(e) {
-      const selectedCheckboxes = document.querySelectorAll('.student-checkbox:checked');
-      
+    form.addEventListener("submit", function (e) {
+      const selectedCheckboxes = document.querySelectorAll(
+        ".student-checkbox:checked:not(:disabled)",
+      );
+
       if (selectedCheckboxes.length === 0) {
         e.preventDefault();
-        alert('Please select at least one student to enroll.');
+        alert("Please select at least one student to enroll.");
         return;
       }
-      
+
       // Show loading state
       submitBtn.disabled = true;
-      submitBtn.innerHTML = '<span class="loading-spinner"></span> Enrolling Students...';
+      submitBtn.innerHTML =
+        '<span class="loading-spinner"></span> Enrolling Students...';
     });
   }
-  
-  // Initialize selected count
+
+  // Initialize
   updateSelectedCount();
-  
-  // Add keyboard shortcuts
-  document.addEventListener('keydown', function(e) {
-    // Ctrl+A to select all
-    if (e.ctrlKey && e.key === 'a') {
+
+  // Keyboard shortcuts
+  document.addEventListener("keydown", function (e) {
+    if (e.ctrlKey && e.key === "a") {
       e.preventDefault();
       selectAll();
     }
-    // Ctrl+D to deselect all
-    if (e.ctrlKey && e.key === 'd') {
+    if (e.ctrlKey && e.key === "d") {
       e.preventDefault();
       deselectAll();
     }
   });
-  
-  // Show notification for keyboard shortcuts
-  console.log('💡 Tip: Use Ctrl+A to select all students, Ctrl+D to deselect all');
 </script>
 {% endblock %}

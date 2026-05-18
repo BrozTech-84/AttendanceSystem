@@ -1,5 +1,40 @@
-myWorld
-*.pyc
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+myWorld/
+.venv
+
+# Django
+*.log
+*.pot
+*.pyc
+local_settings.py
 db.sqlite3
+media/
+staticfiles/
+logs/
+
+# Environment
 .env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+cert.pem
+key.pem
+*.pem

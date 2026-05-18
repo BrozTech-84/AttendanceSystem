@@ -1,5 +1,6 @@
 # LecturerDashboard/urls.py
 from django.urls import path
+from django.http import HttpResponse
 from . import views
 
 urlpatterns = [
@@ -13,5 +14,6 @@ urlpatterns = [
     path('export-attendance/<int:session_id>/', views.export_attendance_csv, name='export_attendance_csv'),
     path('session-attendance-stats/<int:session_id>/', views.session_attendance_stats, name='session_attendance_stats'),
     path('refresh-qr/<int:session_id>/', views.refresh_qr, name='refresh_qr'),
-    path('bulk-enroll/<int:course_id>/', views.bulk_enroll_students, name='bulk_enroll_students'),
+    path('attendance-report/<int:session_id>/', views.attendance_report, name='attendance_report'),
+    path('test/', lambda request: HttpResponse("Test URL works!")),
 ]

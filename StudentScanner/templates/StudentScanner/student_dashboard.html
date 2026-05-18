@@ -3,10 +3,10 @@
 
 {% block content %}
 <style>
+  /* Your existing styles - keep them all */
   :root {
     --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-    --card-hover-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
     --transition: all 0.3s ease;
   }
 
@@ -24,17 +24,6 @@
     box-shadow: var(--card-shadow);
   }
 
-  .dashboard-header h2 {
-    font-size: 2rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-  }
-
-  .dashboard-header .student-info {
-    opacity: 0.9;
-    font-size: 1rem;
-  }
-
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -47,31 +36,8 @@
     border-radius: 16px;
     padding: 1.5rem;
     text-align: center;
-    transition: var(--transition);
-    box-shadow: var(--card-shadow);
     cursor: pointer;
-  }
-
-  .stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--card-hover-shadow);
-  }
-
-  .stat-card i {
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
-  }
-
-  .stat-number {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #333;
-  }
-
-  .stat-label {
-    color: #666;
-    font-size: 0.9rem;
-    margin-top: 0.5rem;
+    box-shadow: var(--card-shadow);
   }
 
   .dashboard-card {
@@ -79,13 +45,7 @@
     border-radius: 20px;
     overflow: hidden;
     box-shadow: var(--card-shadow);
-    transition: var(--transition);
     height: 100%;
-  }
-
-  .dashboard-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--card-hover-shadow);
   }
 
   .card-header-custom {
@@ -94,86 +54,9 @@
     border-bottom: 2px solid #e0e0e0;
   }
 
-  .card-header-custom h5 {
-    margin: 0;
-    font-weight: 600;
-    color: #333;
-  }
-
-  .card-header-custom i {
-    color: #667eea;
-    margin-right: 0.5rem;
-  }
-
   .session-item {
     padding: 1rem;
     border-bottom: 1px solid #f0f0f0;
-    transition: var(--transition);
-    animation: slideIn 0.3s ease-out;
-  }
-
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateX(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  @keyframes slideOut {
-    from {
-      opacity: 1;
-      transform: translateX(0);
-      max-height: 200px;
-    }
-    to {
-      opacity: 0;
-      transform: translateX(10px);
-      max-height: 0;
-      padding: 0;
-      margin: 0;
-    }
-  }
-
-  .session-item.removing {
-    animation: slideOut 0.3s ease-out forwards;
-    pointer-events: none;
-  }
-
-  .session-item:hover {
-    background: #f8f9ff;
-    transform: translateX(5px);
-  }
-
-  .session-title {
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 0.25rem;
-  }
-
-  .session-meta {
-    font-size: 0.8rem;
-    color: #888;
-    margin-bottom: 0.5rem;
-  }
-
-  .expiry-badge {
-    display: inline-block;
-    padding: 0.25rem 0.5rem;
-    border-radius: 12px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    background: #fff3cd;
-    color: #856404;
-    animation: pulse 1s infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
   }
 
   .btn-scan {
@@ -182,23 +65,7 @@
     border: none;
     padding: 0.5rem 1rem;
     border-radius: 10px;
-    font-size: 0.85rem;
-    transition: var(--transition);
-  }
-
-  .btn-scan:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-  }
-
-  .attendance-item {
-    padding: 0.75rem;
-    border-bottom: 1px solid #f0f0f0;
-    transition: var(--transition);
-  }
-
-  .attendance-item:hover {
-    background: #f8f9fa;
+    cursor: pointer;
   }
 
   .status-badge {
@@ -219,55 +86,65 @@
     color: #856404;
   }
 
-  .modal-content {
-    border-radius: 20px;
-    overflow: hidden;
-  }
-
-  .modal-header {
-    background: var(--primary-gradient);
-    color: white;
-    border: none;
-  }
-
-  .modal-header .btn-close {
-    filter: brightness(0) invert(1);
-  }
-
-  #qr-reader {
+  /* Camera Modal Styles */
+  .camera-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
+    height: 100%;
+    background: #000;
+    z-index: 10000;
+    display: none;
+    flex-direction: column;
   }
 
-  #qr-reader__scan_region {
-    background: #f0f0f0;
-    border-radius: 12px;
-    padding: 10px;
+  .camera-modal.active {
+    display: flex;
   }
 
-  .loading-spinner {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
+  .camera-view {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  #cameraVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #000;
+  }
+
+  .camera-controls {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.8);
+    padding: 15px;
+    text-align: center;
+  }
+
+  .camera-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255,255,255,0.9);
+    border: none;
     border-radius: 50%;
-    border-top-color: white;
-    animation: spin 0.6s linear infinite;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 10001;
   }
 
   .empty-state {
     text-align: center;
     padding: 2rem;
     color: #888;
-  }
-
-  .empty-state i {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    opacity: 0.3;
   }
 
   @keyframes slideInRight {
@@ -278,16 +155,6 @@
     to {
       transform: translateX(0);
       opacity: 1;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .dashboard-header h2 {
-      font-size: 1.5rem;
-    }
-    
-    .stats-grid {
-      grid-template-columns: repeat(2, 1fr);
     }
   }
 </style>
@@ -303,73 +170,60 @@
         </h2>
         <p class="student-info mb-0">
           <i class="fas fa-envelope me-2"></i>{{ user.email }}
-          <span class="ms-3"><i class="fas fa-calendar-alt"></i> Student Dashboard</span>
         </p>
       </div>
       <div class="col-md-4 text-md-end mt-3 mt-md-0">
-        <div class="btn-group">
-          <button class="btn btn-light" onclick="window.location.href='{% url 'logout' %}'">
-            <i class="fas fa-sign-out-alt"></i> Logout
-          </button>
-        </div>
+        <button class="btn btn-light" onclick="window.location.href='{% url 'logout' %}'">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
       </div>
     </div>
   </div>
 
   <!-- Statistics Summary -->
   <div class="stats-grid">
-    <div class="stat-card" onclick="scrollToSection('courses')">
+    <div class="stat-card">
       <i class="fas fa-book-open text-primary"></i>
       <div class="stat-number">{{ courses|length }}</div>
       <div class="stat-label">Enrolled Courses</div>
     </div>
-    <div class="stat-card" onclick="scrollToSection('sessions')">
+    <div class="stat-card">
       <i class="fas fa-chalkboard-teacher text-success"></i>
       <div class="stat-number" id="activeSessionsCount">{{ sessions|length }}</div>
       <div class="stat-label">Active Sessions</div>
     </div>
-    <div class="stat-card" onclick="scrollToSection('attendance')">
+    <div class="stat-card">
       <i class="fas fa-user-check text-info"></i>
       <div class="stat-number">{{ attendance|length }}</div>
       <div class="stat-label">Attendance Records</div>
-    </div>
-    <div class="stat-card" onclick="calculateAttendanceRate()">
-      <i class="fas fa-chart-line text-warning"></i>
-      <div class="stat-number" id="attendanceRate">0%</div>
-      <div class="stat-label">Attendance Rate</div>
     </div>
   </div>
 
   <div class="row g-4">
     <!-- Courses Card -->
-    <div class="col-md-4" id="courses">
+    <div class="col-md-4">
       <div class="dashboard-card">
         <div class="card-header-custom">
           <h5><i class="fas fa-book"></i> My Courses</h5>
         </div>
         <div class="card-body p-0">
-          <div class="list-group list-group-flush">
-            {% for course in courses %}
-              <div class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                  <strong>{{ course.name }}</strong>
-                  <br><small class="text-muted">{{ course.code }}</small>
-                </div>
-                <span class="badge bg-primary rounded-pill">{{ course.students.count }} students</span>
-              </div>
-            {% empty %}
-              <div class="empty-state">
-                <i class="fas fa-book-open"></i>
-                <p>No courses enrolled yet</p>
-              </div>
-            {% endfor %}
-          </div>
+          {% for course in courses %}
+            <div class="list-group-item p-3 border-bottom">
+              <strong>{{ course.name }}</strong>
+              <br><small class="text-muted">{{ course.code }}</small>
+            </div>
+          {% empty %}
+            <div class="empty-state">
+              <i class="fas fa-book-open"></i>
+              <p>No courses enrolled yet</p>
+            </div>
+          {% endfor %}
         </div>
       </div>
     </div>
 
     <!-- Active Sessions Card -->
-    <div class="col-md-4" id="sessions">
+    <div class="col-md-4">
       <div class="dashboard-card">
         <div class="card-header-custom">
           <h5><i class="fas fa-chalkboard-teacher"></i> Active Sessions</h5>
@@ -377,18 +231,13 @@
         <div class="card-body p-0">
           <div id="activeSessionsList">
             {% for session in sessions %}
-              <div class="session-item" data-session-id="{{ session.id }}" data-session-expiry="{{ session.qr_expiry.isoformat }}">
+              <div class="session-item p-3 border-bottom" data-session-id="{{ session.id }}">
                 <div class="session-title"><strong>{{ session.course.name }}</strong> - {{ session.topic }}</div>
-                <div class="session-meta">
+                <div class="session-meta text-muted small">
                   <i class="fas fa-clock"></i> Started: {{ session.created_at|date:"H:i, M d" }}
                 </div>
-                <div class="session-meta">
-                  <span class="expiry-badge">
-                    <i class="fas fa-hourglass-half"></i> Expires: {{ session.qr_expiry|date:"H:i:s" }}
-                  </span>
-                </div>
                 <div class="mt-2">
-                  <button class="btn-scan" onclick="requestCameraAndScan({{ session.id }})">
+                  <button class="btn-scan" onclick="openCamera({{ session.id }})">
                     <i class="fas fa-qrcode me-1"></i> Scan QR to Attend
                   </button>
                 </div>
@@ -397,7 +246,6 @@
               <div class="empty-state">
                 <i class="fas fa-chalkboard"></i>
                 <p>No active sessions available</p>
-                <small class="text-muted">Check back when your lecturer starts a session</small>
               </div>
             {% endfor %}
           </div>
@@ -406,7 +254,7 @@
     </div>
 
     <!-- Attendance History Card -->
-    <div class="col-md-4" id="attendance">
+    <div class="col-md-4">
       <div class="dashboard-card">
         <div class="card-header-custom">
           <h5><i class="fas fa-history"></i> Recent Attendance</h5>
@@ -414,27 +262,21 @@
         <div class="card-body p-0">
           <div style="max-height: 400px; overflow-y: auto;">
             {% for record in attendance|slice:":15" %}
-              <div class="attendance-item">
-                <div class="d-flex justify-content-between align-items-start">
+              <div class="attendance-item p-3 border-bottom">
+                <div class="d-flex justify-content-between">
                   <div>
                     <strong>{{ record.session.course.name }}</strong>
-                    <br><small class="text-muted">{{ record.session.topic }}</small>
-                    <br><small class="text-muted"><i class="fas fa-calendar"></i> {{ record.timestamp|date:"M d, H:i" }}</small>
+                    <br><small>{{ record.timestamp|date:"M d, H:i" }}</small>
                   </div>
-                  <div>
-                    {% if record.status == 'late' %}
-                      <span class="status-badge status-late"><i class="fas fa-clock"></i> Late</span>
-                    {% else %}
-                      <span class="status-badge status-present"><i class="fas fa-check-circle"></i> Present</span>
-                    {% endif %}
-                  </div>
+                  <span class="status-badge {% if record.status == 'late' %}status-late{% else %}status-present{% endif %}">
+                    {% if record.status == 'late' %}Late{% else %}Present{% endif %}
+                  </span>
                 </div>
               </div>
             {% empty %}
               <div class="empty-state">
                 <i class="fas fa-user-check"></i>
                 <p>No attendance records yet</p>
-                <small class="text-muted">Scan QR codes in active sessions to mark attendance</small>
               </div>
             {% endfor %}
           </div>
@@ -444,401 +286,383 @@
   </div>
 </div>
 
-<!-- QR Scanner Modal -->
-<div class="modal fade" id="qrScannerModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">
-          <i class="fas fa-qrcode me-2"></i>Scan QR Code
-          <span id="locationStatus" class="badge bg-secondary ms-2"></span>
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div id="qr-reader" style="width: 100%"></div>
-        <div id="loadingMessage" class="text-center text-muted mt-2">
-          <div class="loading-spinner"></div> Initializing camera...
-        </div>
-        <hr class="my-4">
-        <div class="mt-3">
-          <label for="manualCode" class="form-label"><i class="fas fa-keyboard"></i> Or enter code manually:</label>
-          <div class="input-group">
-            <input type="text" id="manualCode" class="form-control" placeholder="Paste QR code text here">
-            <button class="btn btn-primary" onclick="submitManualCode()">
-              <i class="fas fa-paper-plane"></i> Submit
-            </button>
-          </div>
-        </div>
-      </div>
+<!-- Camera Modal - Simplified Native Camera -->
+<div id="cameraModal" class="camera-modal">
+  <button class="camera-close" onclick="closeCamera()">✕</button>
+  <div class="camera-view">
+    <video id="cameraVideo" autoplay playsinline muted></video>
+    <div class="camera-controls">
+      <div id="scanStatus" style="color: white; margin-bottom: 10px;">📷 Camera ready. Point at QR code.</div>
+      <div id="qrResult" style="color: #4CAF50; margin-bottom: 10px;"></div>
+      <button class="btn btn-danger" onclick="closeCamera()">Cancel</button>
     </div>
   </div>
 </div>
 
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+// Load jsQR library for QR scanning
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
 <script>
-  let currentSessionId = null;
-  let qrReader = null;
-  let currentLocation = null;
-  let isSubmitting = false;
-  let refreshInterval = null;
-  let expiryCheckInterval = null;
+let currentSessionId = null;
+let currentLocation = null;
+let scanning = false;
+let scanInterval = null;
+let currentStream = null;
+let isSubmitting = false;  // Prevent duplicate submissions
+let lastSubmitTime = 0;
+const SUBMIT_COOLDOWN = 5000; // 5 seconds cooldown
 
-  // Calculate attendance rate
-  function calculateAttendanceRate() {
-    const totalRecords = {{ attendance|length }};
-    const totalCourses = {{ courses|length }};
-    if (totalCourses > 0 && totalRecords > 0) {
-      // Simple calculation - can be customized based on your logic
-      const rate = Math.min(Math.round((totalRecords / (totalCourses * 10)) * 100), 100);
-      document.getElementById('attendanceRate').textContent = rate + '%';
-    } else {
-      document.getElementById('attendanceRate').textContent = '0%';
-    }
-  }
-
-  // Scroll to section
-  function scrollToSection(sectionId) {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }
-
-  // Check and remove expired sessions
-  function checkExpiredSessions() {
-    const now = new Date();
-    const sessionItems = document.querySelectorAll('#activeSessionsList .session-item');
-    let removedCount = 0;
-    
-    sessionItems.forEach(item => {
-      const expiryStr = item.dataset.sessionExpiry;
-      if (expiryStr) {
-        const expiryTime = new Date(expiryStr);
-        if (expiryTime < now && !item.classList.contains('removing')) {
-          item.classList.add('removing');
-          removedCount++;
-          
-          setTimeout(() => {
-            if (item && item.parentNode) {
-              item.remove();
-              updateActiveSessionsCount();
+// Get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
             }
-          }, 300);
         }
-      }
-    });
-    
-    // Show empty state if no sessions left
-    setTimeout(() => {
-      const remainingSessions = document.querySelectorAll('#activeSessionsList .session-item').length;
-      if (remainingSessions === 0) {
-        const container = document.getElementById('activeSessionsList');
-        if (container && container.children.length === 0) {
-          container.innerHTML = `
-            <div class="empty-state">
-              <i class="fas fa-chalkboard"></i>
-              <p>No active sessions available</p>
-              <small class="text-muted">Check back when your lecturer starts a session</small>
-            </div>
-          `;
-        }
-      }
-    }, 350);
-  }
-
-  // Update active sessions count
-  function updateActiveSessionsCount() {
-    const count = document.querySelectorAll('#activeSessionsList .session-item').length;
-    const countElement = document.getElementById('activeSessionsCount');
-    if (countElement) {
-      countElement.textContent = count;
     }
-  }
+    return cookieValue;
+}
 
-  // Get device location
-  function getLocation() {
+// Get location with retry
+async function getLocation(retryCount = 0) {
     return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject(new Error('Geolocation not supported'));
-        return;
-      }
-      
-      const locationStatus = document.getElementById('locationStatus');
-      if (locationStatus) {
-        locationStatus.textContent = '📍 Getting location...';
-        locationStatus.className = 'badge bg-warning ms-2';
-      }
-      
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            lat: position.coords.latitude,
-            lon: position.coords.longitude
-          });
-        },
-        (error) => {
-          let errorMsg = 'Location access denied';
-          if (error.code === 1) errorMsg = 'Please allow location access';
-          else if (error.code === 2) errorMsg = 'Location unavailable';
-          else if (error.code === 3) errorMsg = 'Location timeout';
-          reject(new Error(errorMsg));
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
+        if (!navigator.geolocation) {
+            reject(new Error('Geolocation not supported'));
+            return;
+        }
+        
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                resolve({
+                    lat: position.coords.latitude,
+                    lon: position.coords.longitude
+                });
+            },
+            (error) => {
+                let errorMsg = 'Location access denied';
+                if (error.code === 1) errorMsg = 'Please allow location access in your browser settings';
+                if (error.code === 2) errorMsg = 'Location unavailable. Check GPS.';
+                if (error.code === 3) errorMsg = 'Location timeout. Please try again.';
+                
+                if (retryCount < 2) {
+                    showNotification('Retrying location...', 'info');
+                    setTimeout(() => {
+                        getLocation(retryCount + 1).then(resolve).catch(reject);
+                    }, 2000);
+                } else {
+                    reject(new Error(errorMsg));
+                }
+            },
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        );
     });
-  }
+}
 
-  async function requestCameraAndScan(sessionId) {
-    const sessionElement = document.querySelector(`.session-item[data-session-id="${sessionId}"]`);
-    if (!sessionElement) {
-      showNotification('This session has ended or expired', 'danger');
-      return;
+// Open camera
+async function openCamera(sessionId) {
+    // Prevent multiple camera openings
+    if (scanning || isSubmitting) {
+        showNotification('Please wait, processing previous request...', 'warning');
+        return;
     }
     
     currentSessionId = sessionId;
     
-    try {
-      currentLocation = await getLocation();
-      const locationStatus = document.getElementById('locationStatus');
-      if (locationStatus) {
-        locationStatus.textContent = '✅ Location ready';
-        locationStatus.className = 'badge bg-success ms-2';
-      }
-    } catch (error) {
-      console.error('Location error:', error);
-      const locationStatus = document.getElementById('locationStatus');
-      if (locationStatus) {
-        locationStatus.textContent = '⚠️ ' + error.message;
-        locationStatus.className = 'badge bg-danger ms-2';
-      }
-      
-      if (confirm('Location access is required for attendance. Would you like to enable it?')) {
-        return;
-      }
-    }
-    
-    const loadingMsg = document.getElementById('loadingMessage');
-    
-    if (!qrReader) {
-      qrReader = new Html5Qrcode("qr-reader");
-    }
-    
-    if (loadingMsg) loadingMsg.style.display = 'block';
-    
-    const config = {
-      fps: 10,
-      qrbox: { width: 250, height: 250 },
-      aspectRatio: 1.0
-    };
-    
-    try {
-      await qrReader.start(
-        { facingMode: "environment" },
-        config,
-        (decodedText) => {
-          if (loadingMsg) loadingMsg.style.display = 'none';
-          sendAttendance(decodedText);
-          qrReader.stop();
-          const modal = bootstrap.Modal.getInstance(document.getElementById('qrScannerModal'));
-          if (modal) modal.hide();
-        },
-        (errorMessage) => {
-          if (!errorMessage.includes('No MultiFormat Readers')) {
-            console.debug('Scan error:', errorMessage);
-          }
-        }
-      );
-    } catch (err) {
-      console.error('Camera error:', err);
-      if (loadingMsg) {
-        loadingMsg.innerHTML = '<span class="text-danger">❌ Camera access denied or not available</span>';
-      }
-    }
-    
-    const modal = new bootstrap.Modal(document.getElementById('qrScannerModal'));
-    modal.show();
-  }
-
-  function submitManualCode() {
-    const code = document.getElementById('manualCode').value.trim();
-    if (!code) {
-      alert('Please enter or paste the QR code text.');
-      return;
-    }
-    sendAttendance(code);
-  }
-
-  async function sendAttendance(qrData) {
-    if (isSubmitting) {
-      alert('Please wait, submitting...');
-      return;
-    }
-    
-    const sessionElement = document.querySelector(`.session-item[data-session-id="${currentSessionId}"]`);
+    // Check if session exists
+    const sessionElement = document.querySelector(`.session-item[data-session-id="${sessionId}"]`);
     if (!sessionElement) {
-      showNotification('This session has ended or expired', 'danger');
-      const modal = bootstrap.Modal.getInstance(document.getElementById('qrScannerModal'));
-      if (modal) modal.hide();
-      return;
+        showNotification('This session has ended', 'danger');
+        return;
+    }
+    
+    // Show loading
+    showNotification('Getting location...', 'info');
+    
+    // Get location first
+    try {
+        currentLocation = await getLocation();
+        console.log('Location obtained:', currentLocation);
+        showNotification('Location obtained! Opening camera...', 'success');
+    } catch (error) {
+        showNotification('⚠️ ' + error.message + '. Continuing without location...', 'warning');
+        currentLocation = null;
+    }
+    
+    // Show camera modal
+    const modal = document.getElementById('cameraModal');
+    modal.classList.add('active');
+    
+    // Start camera
+    startCamera();
+}
+
+// Start camera stream
+async function startCamera() {
+    const video = document.getElementById('cameraVideo');
+    const statusDiv = document.getElementById('scanStatus');
+    
+    // Reset scanning flag
+    scanning = false;
+    
+    try {
+        // Request camera access (prefer back camera)
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: { exact: "environment" } } 
+        });
+        
+        currentStream = stream;
+        video.srcObject = stream;
+        await video.play();
+        
+        statusDiv.innerHTML = '✅ Camera ready. Point at QR code...';
+        
+        // Start scanning after video is ready
+        setTimeout(() => {
+            startQRScanning();
+        }, 1000);
+        
+    } catch (error) {
+        console.error('Camera error:', error);
+        
+        // Try with default camera
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            currentStream = stream;
+            video.srcObject = stream;
+            await video.play();
+            
+            statusDiv.innerHTML = '✅ Camera ready. Point at QR code...';
+            startQRScanning();
+        } catch (err) {
+            statusDiv.innerHTML = '❌ Cannot access camera: ' + err.message;
+            showNotification('Camera access denied. Please check permissions.', 'danger');
+        }
+    }
+}
+
+// QR Code scanning
+function startQRScanning() {
+    const video = document.getElementById('cameraVideo');
+    const statusDiv = document.getElementById('scanStatus');
+    const resultDiv = document.getElementById('qrResult');
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    
+    if (scanInterval) {
+        clearInterval(scanInterval);
+        scanInterval = null;
+    }
+    
+    scanInterval = setInterval(() => {
+        // Don't scan if already processing
+        if (scanning || isSubmitting) {
+            return;
+        }
+        
+        if (!video.videoWidth || !video.videoHeight) {
+            return;
+        }
+        
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "dontInvert",
+        });
+        
+        if (code) {
+            // Stop scanning immediately
+            scanning = true;
+            if (scanInterval) {
+                clearInterval(scanInterval);
+                scanInterval = null;
+            }
+            
+            resultDiv.innerHTML = '✅ QR detected! Processing...';
+            statusDiv.innerHTML = '📤 Submitting attendance...';
+            submitAttendance(code.data);
+        }
+    }, 300);
+}
+
+// Submit attendance
+async function submitAttendance(qrData) {
+    // Prevent duplicate submissions
+    if (isSubmitting) {
+        console.log('Already submitting, ignoring duplicate');
+        return;
+    }
+    
+    // Check cooldown
+    const now = Date.now();
+    if (now - lastSubmitTime < SUBMIT_COOLDOWN) {
+        const waitTime = Math.ceil((SUBMIT_COOLDOWN - (now - lastSubmitTime)) / 1000);
+        showNotification(`Please wait ${waitTime} seconds before scanning again`, 'warning');
+        resetScanner();
+        return;
     }
     
     isSubmitting = true;
+    lastSubmitTime = now;
     
-    const submitBtn = document.querySelector('#qrScannerModal .btn-primary');
-    if (submitBtn) {
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<span class="loading-spinner"></span> Submitting...';
-    }
+    const resultDiv = document.getElementById('qrResult');
     
     const payload = {
-      qr_data: qrData,
-      device_info: navigator.userAgent
+        qr_data: qrData,
+        device_info: navigator.userAgent
     };
     
     if (currentLocation) {
-      payload.latitude = currentLocation.lat;
-      payload.longitude = currentLocation.lon;
+        payload.latitude = currentLocation.lat;
+        payload.longitude = currentLocation.lon;
     }
     
     try {
-      const response = await fetch(`/scanner/mark-attendance/${currentSessionId}/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCookie('csrftoken')
-        },
-        body: JSON.stringify(payload)
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        showNotification(`✅ ${data.message}`, 'success');
-        setTimeout(() => location.reload(), 1500);
-      } else {
-        showNotification(`❌ ${data.error}`, 'danger');
-        if (data.error && (data.error.includes('expired') || data.error.includes('active'))) {
-          const sessionElem = document.querySelector(`.session-item[data-session-id="${currentSessionId}"]`);
-          if (sessionElem && !sessionElem.classList.contains('removing')) {
-            sessionElem.classList.add('removing');
+        const response = await fetch(`/scanner/mark-attendance/${currentSessionId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            resultDiv.innerHTML = '✅ ' + data.message;
+            showNotification(data.message, 'success');
+            
+            // Close camera and reload after success
             setTimeout(() => {
-              if (sessionElem && sessionElem.parentNode) sessionElem.remove();
-              updateActiveSessionsCount();
-            }, 300);
-          }
+                closeCamera();
+                location.reload();
+            }, 2000);
+        } else {
+            resultDiv.innerHTML = '❌ ' + data.error;
+            showNotification(data.error, 'danger');
+            
+            // Reset scanner to allow retry
+            setTimeout(() => {
+                resetScanner();
+            }, 2000);
         }
-      }
     } catch (error) {
-      console.error('Error:', error);
-      showNotification('Network error. Please try again.', 'danger');
+        console.error('Error:', error);
+        resultDiv.innerHTML = '❌ Network error. Please try again.';
+        showNotification('Network error. Please check connection.', 'danger');
+        
+        // Reset scanner to allow retry
+        setTimeout(() => {
+            resetScanner();
+        }, 2000);
     } finally {
-      isSubmitting = false;
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit';
-      }
-      currentLocation = null;
+        isSubmitting = false;
     }
-  }
+}
 
-  function showNotification(message, type) {
+// Reset scanner for retry
+function resetScanner() {
+    scanning = false;
+    const resultDiv = document.getElementById('qrResult');
+    const statusDiv = document.getElementById('scanStatus');
+    
+    if (resultDiv) resultDiv.innerHTML = '';
+    if (statusDiv) statusDiv.innerHTML = '📷 Camera ready. Point at QR code...';
+    
+    // Restart scanning
+    if (!scanInterval && currentStream && !scanning) {
+        startQRScanning();
+    }
+}
+
+// Close camera
+function closeCamera() {
+    if (scanInterval) {
+        clearInterval(scanInterval);
+        scanInterval = null;
+    }
+    
+    if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+    }
+    
+    const modal = document.getElementById('cameraModal');
+    if (modal) modal.classList.remove('active');
+    
+    scanning = false;
+    isSubmitting = false;
+    currentLocation = null;
+    
+    // Clear scan status
+    const resultDiv = document.getElementById('qrResult');
+    const statusDiv = document.getElementById('scanStatus');
+    if (resultDiv) resultDiv.innerHTML = '';
+    if (statusDiv) statusDiv.innerHTML = '📷 Camera ready. Point at QR code.';
+}
+
+// Show notification
+function showNotification(message, type) {
+    // Remove existing notification
+    const existing = document.querySelector('.custom-notification');
+    if (existing) existing.remove();
+    
     const toast = document.createElement('div');
-    toast.className = `alert alert-${type} alert-dismissible fade show`;
+    toast.className = `custom-notification alert alert-${type}`;
     toast.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 9999;
-      min-width: 300px;
-      animation: slideInRight 0.3s ease-out;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10001;
+        min-width: 280px;
+        max-width: 90%;
+        animation: slideInRight 0.3s ease-out;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        text-align: center;
     `;
-    toast.innerHTML = `
-      ${message}
-      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    `;
+    toast.innerHTML = message;
     document.body.appendChild(toast);
     
     setTimeout(() => {
-      if (toast && toast.remove) toast.remove();
-    }, 4000);
-  }
+        if (toast && toast.remove) toast.remove();
+    }, 3000);
+}
 
-  function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-      const cookies = document.cookie.split(';');
-      for (let cookie of cookies) {
-        cookie = cookie.trim();
-        if (cookie.substring(0, name.length + 1) === (name + '=')) {
-          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-          break;
-        }
-      }
+// Clean up on page unload
+window.addEventListener('beforeunload', () => {
+    if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
     }
-    return cookieValue;
-  }
-
-  async function refreshActiveSessions() {
-    try {
-      const response = await fetch('/scanner/active-sessions/');
-      const serverSessions = await response.json();
-      const serverSessionIds = new Set(serverSessions.map(s => s.id.toString()));
-      
-      const currentSessions = document.querySelectorAll('#activeSessionsList .session-item');
-      let removedCount = 0;
-      
-      currentSessions.forEach(session => {
-        const sessionId = session.dataset.sessionId;
-        if (!serverSessionIds.has(sessionId) && !session.classList.contains('removing')) {
-          session.classList.add('removing');
-          removedCount++;
-          setTimeout(() => {
-            if (session && session.parentNode) session.remove();
-            updateActiveSessionsCount();
-          }, 300);
-        }
-      });
-      
-      setTimeout(() => {
-        updateActiveSessionsCount();
-        const remainingSessions = document.querySelectorAll('#activeSessionsList .session-item').length;
-        if (remainingSessions === 0) {
-          const container = document.getElementById('activeSessionsList');
-          if (container && container.children.length === 0 && !container.innerHTML.includes('empty-state')) {
-            container.innerHTML = `
-              <div class="empty-state">
-                <i class="fas fa-chalkboard"></i>
-                <p>No active sessions available</p>
-                <small class="text-muted">Check back when your lecturer starts a session</small>
-              </div>
-            `;
-          }
-        }
-      }, 350);
-      
-    } catch (error) {
-      console.error('Refresh error:', error);
+    if (scanInterval) {
+        clearInterval(scanInterval);
     }
-  }
+});
 
-  // Initialize
-  document.addEventListener('DOMContentLoaded', () => {
-    calculateAttendanceRate();
+// Refresh active sessions periodically
+let refreshInterval = setInterval(() => {
+    if (!document.getElementById('activeSessionsList')) return;
     
-    expiryCheckInterval = setInterval(checkExpiredSessions, 5000);
-    refreshInterval = setInterval(refreshActiveSessions, 10000);
-    checkExpiredSessions();
-  });
-
-  // Cleanup
-  window.addEventListener('beforeunload', () => {
-    if (refreshInterval) clearInterval(refreshInterval);
-    if (expiryCheckInterval) clearInterval(expiryCheckInterval);
-    if (qrReader) {
-      qrReader.stop().catch(console.error);
-    }
-  });
+    fetch('/scanner/active-sessions/')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('activeSessionsList');
+            if (container) {
+                const currentCount = document.querySelectorAll('.session-item').length;
+                if (data.length !== currentCount) {
+                    location.reload();
+                }
+            }
+        })
+        .catch(console.error);
+}, 30000);
 </script>
 {% endblock %}

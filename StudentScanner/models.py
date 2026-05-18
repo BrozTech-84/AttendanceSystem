@@ -9,7 +9,7 @@ class Course(models.Model):
     code = models.CharField(max_length=20, unique=True)
     students = models.ManyToManyField(CustomUser, related_name="enrolled_courses", blank=True)
     
-    # Add room/campus location
+    # Room/campus location
     default_latitude = models.FloatField(null=True, blank=True)
     default_longitude = models.FloatField(null=True, blank=True)
     
@@ -35,7 +35,7 @@ class Session(models.Model):
     location_name = models.CharField(max_length=500, null=True, blank=True)  # Human-readable location
 
     # Allowed radius (in meters)
-    allowed_radius = models.IntegerField(default=50)  # 50 meters default
+    allowed_radius = models.IntegerField(default=100)  # 100 meters default
 
     def __str__(self):
         return f"{self.course.name} - {self.topic}"

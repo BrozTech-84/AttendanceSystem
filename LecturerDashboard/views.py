@@ -2,19 +2,24 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.http import HttpResponse, JsonResponse
-from StudentScanner.models import Course, Session, Attendance  # Combined imports
-from UserLogin.models import Program, CustomUser  # Combined imports
-from UserLogin.decorators import lecturer_required
-from django import forms
 from django.contrib import messages
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.db.models import Q
+from django import forms
+from django.views.decorators.http import require_http_methods
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from io import BytesIO
+from datetime import timedelta
 import qrcode
 import base64
 import json
 import csv
-from io import BytesIO
-from datetime import timedelta
+
+# Models
+from StudentScanner.models import Course, Session, Attendance
+from UserLogin.models import Program, CustomUser
+from UserLogin.decorators import lecturer_required
 
 # Geocoding setup 
 try:
@@ -25,10 +30,10 @@ except ImportError:
     GEOCODING_AVAILABLE = False
     print("Warning: geopy not installed. Install with: pip install geopy")
 
+
 def get_location_name(latitude, longitude):
     """
-    Convert coordinates to a human-readable location name using multiple services
-    Returns a string like "Computer Science Building, University of Nairobi"
+    Convert coordinates to a human-readable location name
     """
     if not latitude or not longitude:
         return "Location not specified"
@@ -38,15 +43,16 @@ def get_location_name(latitude, longitude):
     # Using OpenStreetMap's Nominatim (Free, no API key needed)
     if GEOCODING_AVAILABLE:
         try:
+            from geopy.extra.rate_limiter import RateLimiter
             geolocator = Nominatim(user_agent="attendance_system")
-            # Add rate limiting to respect OpenStreetMap's policy
-            geocode = RateLimiter(geolocator.reverse, delay=1)
-            location = geocode(f"{latitude}, {longitude}")
+            
+            # Fix: Use proper RateLimiter syntax
+            reverse_geocode = RateLimiter(geolocator.reverse, min_delay_seconds=1)
+            location = reverse_geocode(f"{latitude}, {longitude}")
             
             if location and location.raw:
                 address = location.raw.get('address', {})
                 
-                # Build a readable address
                 parts = []
                 if address.get('building'):
                     parts.append(address['building'])
@@ -72,14 +78,15 @@ def get_location_name(latitude, longitude):
                     parts.append(address['state'])
                 
                 if parts:
-                    location_name = ", ".join(parts[:4])  # Limit to first 4 parts
+                    location_name = ", ".join(parts[:4])
                 else:
                     location_name = location.address.split(',')[0] if location.address else None
                     
         except Exception as e:
             print(f"Geocoding error: {e}")
+            # Fallback to coordinates
+            location_name = f"Lat: {latitude:.4f}, Lon: {longitude:.4f}"
     
-    # Fallback if geocoding failed
     if not location_name:
         location_name = f"Lat: {latitude:.4f}, Lon: {longitude:.4f}"
     
@@ -94,16 +101,14 @@ def dashboard(request):
         'sessions': sessions,
     })
 
+
 @lecturer_required
 def lecturer_dashboard(request):
-    # Get all courses linked to any of the lecturer's programs
     courses = Course.objects.filter(programs__in=request.user.programs.all()).distinct()
     sessions = Session.objects.filter(lecturer=request.user)
 
-    # Collect enrolled students per course
     course_students = {course.id: course.students.all() for course in courses}
 
-    # Group courses by program for clarity
     grouped_courses = {}
     for course in courses:
         for program in course.programs.all():
@@ -115,23 +120,77 @@ def lecturer_dashboard(request):
         'course_students': course_students,
     })
 
+
 @lecturer_required
 def onboard_students(request, course_id):
     course = get_object_or_404(Course, id=course_id)
-
-    # Only students from the same program as the course
-    students = CustomUser.objects.filter(program__in=course.programs.all(), role='student')
-
+    
     if request.method == 'POST':
+        print("=" * 60)
+        print("POST RECEIVED - Enrolling Students")
+        print(f"Course: {course.name} (ID: {course.id})")
+        
         selected_ids = request.POST.getlist('students')
-        selected_students = CustomUser.objects.filter(id__in=selected_ids)
-        course.students.set(selected_students)  # enroll selected students
+        print(f"Selected student IDs: {selected_ids}")
+        
+        if selected_ids:
+            # ONLY get users with role='student' - exclude admins and lecturers
+            students_to_add = CustomUser.objects.filter(
+                id__in=selected_ids, 
+                role='student'  # Only students
+            ).exclude(
+                is_superuser=True  # Exclude superusers just in case
+            )
+            count = students_to_add.count()
+            print(f"Found {count} valid students to enroll (filtered out admins/lecturers)")
+            
+            if count > 0:
+                course.students.add(*students_to_add)
+                messages.success(request, f'✅ Successfully enrolled {count} student(s) to {course.name}')
+                print(f"Success! Added {count} students to course")
+            else:
+                messages.error(request, '❌ No valid students selected. Admins and lecturers cannot be enrolled as students.')
+                print("No valid students found in selection - only admins/lecturers were selected")
+        else:
+            messages.error(request, '❌ Please select at least one student to enroll.')
+            print("No students selected")
+        
+        print("Redirecting to lecturer dashboard...")
         return redirect('lecturer_dashboard')
-
-    return render(request, 'LecturerDashboard/onboard_students.html', {
+    
+    # GET request - display form
+    print("=" * 60)
+    print("GET REQUEST - Displaying enrollment form")
+    
+    # ONLY show users with role='student' - exclude admins, lecturers, and superusers
+    students_list = CustomUser.objects.filter(
+        role='student'  # Only students
+    ).exclude(
+        is_superuser=True  # Exclude superusers
+    ).order_by('username')
+    
+    # Also filter by program (only show students from same program as course)
+    # Uncomment if you want to restrict to same program:
+    # students_list = students_list.filter(program__in=course.programs.all())
+    
+    enrolled_ids = set(course.students.values_list('id', flat=True))
+    
+    print(f"Total students available (students only, no admins): {students_list.count()}")
+    print(f"Already enrolled: {len(enrolled_ids)}")
+    
+    # Debug: Check if any admins accidentally appear
+    admin_in_list = students_list.filter(is_superuser=True).exists()
+    if admin_in_list:
+        print("WARNING: Admin users found in student list - check your filters!")
+    
+    context = {
         'course': course,
-        'students': students
-    })
+        'students': students_list,
+        'enrolled_ids': enrolled_ids,
+        'total_students': students_list.count(),
+    }
+    
+    return render(request, 'LecturerDashboard/onboard_students.html', context)
 
 @lecturer_required
 def start_session(request, course_id):
@@ -146,19 +205,15 @@ def start_session(request, course_id):
         lat = data.get("latitude")
         lon = data.get("longitude")
         
-        # Log if not provided
         if not lat or not lon:
             return JsonResponse({
                 "error": "Location access is required to start a session. Please enable location permissions."
             }, status=400)
 
-        # Get human-readable location name
         location_name = get_location_name(lat, lon)
-
-        # Get additional location details
         topic = data.get("topic", "Lecture")
         duration_minutes = data.get("duration_minutes", 5)
-        allowed_radius = data.get("allowed_radius", 50)  # in meters
+        allowed_radius = data.get("allowed_radius", 100)
 
         session = Session.objects.create(
             course=course,
@@ -166,9 +221,9 @@ def start_session(request, course_id):
             topic=topic,
             latitude=lat,
             longitude=lon,
-            location_name=location_name,  # Make sure this field exists in your Session model
-            allowed_radius=allowed_radius,  # Make sure this field exists in your Session model
-            qr_expiry=timezone.now() + timedelta(minutes=duration_minutes),  # FIXED: use duration_minutes instead of hardcoded 1
+            location_name=location_name,
+            allowed_radius=allowed_radius,
+            qr_expiry=timezone.now() + timedelta(minutes=duration_minutes),
             qr_code_data=f"session-{course.id}-{timezone.now().timestamp()}"
         )
 
@@ -210,15 +265,15 @@ def start_session(request, course_id):
         "default_duration": 5
     })
 
+
 @lecturer_required
 def end_session(request, session_id):
     session = get_object_or_404(Session, id=session_id)
     session.is_active = False
     session.save()
 
-    # Notify students
     channel_layer = get_channel_layer()
-    if channel_layer:  # safety check
+    if channel_layer:
         active_sessions = Session.objects.filter(is_active=True)
         data = [
             {
@@ -236,9 +291,9 @@ def end_session(request, session_id):
 
     return redirect("lecturer_dashboard")
 
+
 @lecturer_required
 def session_detail(request, session_id):
-    """Get detailed info about a specific session for lecturer"""
     session = get_object_or_404(Session, id=session_id, lecturer=request.user)
     
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -253,17 +308,16 @@ def session_detail(request, session_id):
             "has_location": bool(session.latitude and session.longitude),
             "latitude": session.latitude,
             "longitude": session.longitude,
-            "allowed_radius": getattr(session, 'allowed_radius', 50)  # FIXED: use getattr
+            "allowed_radius": getattr(session, 'allowed_radius', 50)
         })
     
     return render(request, 'LecturerDashboard/session_detail.html', {'session': session})
 
+
 @lecturer_required
 def session_attendance_report(request, session_id):
-    """View attendance report for a specific session"""
     session = get_object_or_404(Session, id=session_id, lecturer=request.user)
     
-    # Get enrolled students and their attendance status
     enrolled_students = session.course.students.all()
     attendance_records = {a.student_id: a for a in Attendance.objects.filter(session=session)}
     
@@ -278,7 +332,6 @@ def session_attendance_report(request, session_id):
             'location': f"{record.marked_latitude},{record.marked_longitude}" if record and record.marked_latitude else None,
         })
     
-    # Statistics
     total = enrolled_students.count()
     present = sum(1 for s in student_data if s['attended'])
     late = sum(1 for s in student_data if s['status'] == 'late')
@@ -288,7 +341,7 @@ def session_attendance_report(request, session_id):
             'total': total,
             'present': present,
             'late': late,
-            'absent': total - present - late,  # FIXED: subtract late as well
+            'absent': total - present - late,
             'students': student_data
         })
     
@@ -298,12 +351,77 @@ def session_attendance_report(request, session_id):
         'total': total,
         'present': present,
         'late': late,
-        'absent': total - present - late  # FIXED: subtract late as well
+        'absent': total - present - late
     })
+
+
+@lecturer_required
+def attendance_report(request, session_id):
+    """View attendance report for a specific session"""
+    session = get_object_or_404(Session, id=session_id, lecturer=request.user)
+    
+    # Get all enrolled students
+    enrolled_students = session.course.students.all().order_by('username')
+    
+    # Get attendance records for this session
+    attendance_records = {}
+    for record in Attendance.objects.filter(session=session):
+        attendance_records[record.student_id] = record
+    
+    # Prepare student data
+    student_data = []
+    for student in enrolled_students:
+        record = attendance_records.get(student.id)
+        student_data.append({
+            'student': student,
+            'status': record.status if record else 'absent',
+            'timestamp': record.timestamp if record else None,
+            'location': f"{record.marked_latitude:.6f}, {record.marked_longitude:.6f}" if record and record.marked_latitude else 'N/A',
+            'device': record.device_info[:50] if record and record.device_info else 'N/A',
+            'ip': record.ip_address if record else 'N/A'
+        })
+    
+    # Statistics
+    total_students = enrolled_students.count()
+    present_count = sum(1 for s in student_data if s['status'] == 'present')
+    late_count = sum(1 for s in student_data if s['status'] == 'late')
+    absent_count = total_students - present_count - late_count
+    attendance_percentage = (present_count + late_count) / total_students * 100 if total_students > 0 else 0
+    
+    context = {
+        'session': session,
+        'student_data': student_data,
+        'total_students': total_students,
+        'present_count': present_count,
+        'late_count': late_count,
+        'absent_count': absent_count,
+        'attendance_percentage': round(attendance_percentage, 1),
+    }
+    
+    # If AJAX request, return JSON
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'total': total_students,
+            'present': present_count,
+            'late': late_count,
+            'absent': absent_count,
+            'percentage': round(attendance_percentage, 1),
+            'students': [
+                {
+                    'name': s['student'].get_full_name() or s['student'].username,
+                    'email': s['student'].email,
+                    'status': s['status'],
+                    'timestamp': s['timestamp'].strftime('%Y-%m-%d %H:%M:%S') if s['timestamp'] else None,
+                    'location': s['location']
+                } for s in student_data
+            ]
+        })
+    
+    return render(request, 'LecturerDashboard/attendance_report.html', context)
+
 
 @lecturer_required
 def export_attendance_csv(request, session_id):
-    """Export attendance as CSV"""
     session = get_object_or_404(Session, id=session_id, lecturer=request.user)
     
     response = HttpResponse(content_type='text/csv')
@@ -328,35 +446,30 @@ def export_attendance_csv(request, session_id):
     
     return response
 
+
 @lecturer_required
 def refresh_qr(request, session_id):
-    """Refresh QR code for an active session"""
     try:
         session = get_object_or_404(Session, id=session_id, lecturer=request.user)
         
-        # Only refresh if session is active
         if not session.is_active:
             return JsonResponse({
                 "error": "Session is not active",
                 "success": False
             }, status=400)
         
-        # Extend expiry by 1 minute
         session.qr_expiry = timezone.now() + timedelta(minutes=1)
         
-        # Create payload for QR
         payload = {
             "session_id": session.id,
             "exp": session.qr_expiry.isoformat(),
             "location_name": getattr(session, 'location_name', 'Lecture Location')
         }
         
-        # Add location if available
         if session.latitude and session.longitude:
             payload["lat"] = session.latitude
             payload["lon"] = session.longitude
         
-        # Generate QR code
         qr = qrcode.QRCode(
             version=1,
             box_size=10,
@@ -371,7 +484,6 @@ def refresh_qr(request, session_id):
         img.save(buffer, format="PNG")
         qr_base64 = base64.b64encode(buffer.getvalue()).decode()
         
-        # Save to session
         session.qr_code_base64 = qr_base64
         session.save()
         
@@ -386,7 +498,8 @@ def refresh_qr(request, session_id):
             "error": str(e),
             "success": False
         }, status=500)
-    
+
+
 class CourseForm(forms.ModelForm):
     programs = forms.ModelMultipleChoiceField(
         queryset=Program.objects.all(),
@@ -399,6 +512,7 @@ class CourseForm(forms.ModelForm):
         model = Course
         fields = ['name', 'code', 'programs']
 
+
 @lecturer_required
 def add_course(request):
     if request.method == 'POST':
@@ -406,7 +520,7 @@ def add_course(request):
         if form.is_valid():
             course = form.save(commit=False)
             course.save()
-            form.save_m2m()  # save selected programs
+            form.save_m2m()
             messages.success(request, f"Course '{course.name}' added successfully!")
             return redirect('lecturer_dashboard')
         else:
@@ -415,29 +529,37 @@ def add_course(request):
         form = CourseForm()
     return render(request, 'LecturerDashboard/add_course.html', {'form': form})
 
+
 @lecturer_required
 def my_sessions(request):
     # Get all courses linked to the lecturer
     courses = Course.objects.filter(programs__in=request.user.programs.all()).distinct()
 
-    # Build a dictionary: course → number of sessions
+    # Build a list with courses and their sessions
     course_sessions = []
+    total_sessions = 0
+    active_sessions_count = 0
+    
     for course in courses:
-        session_count = Session.objects.filter(course=course, lecturer=request.user).count()
+        sessions = Session.objects.filter(course=course, lecturer=request.user).order_by('-created_at')
+        session_count = sessions.count()
+        total_sessions += session_count
+        active_sessions_count += sessions.filter(is_active=True).count()
+        
         course_sessions.append({
             "course": course,
-            "session_count": session_count
+            "session_count": session_count,
+            "sessions": sessions
         })
 
     return render(request, "LecturerDashboard/my_sessions.html", {
-        "course_sessions": course_sessions
+        "course_sessions": course_sessions,
+        "total_sessions": total_sessions,
+        "active_sessions_count": active_sessions_count,
     })
 
 @lecturer_required
 def session_attendance_stats(request, session_id):
-    """Get live attendance statistics for a session"""
-    from StudentScanner.models import Attendance
-    
     session = get_object_or_404(Session, id=session_id, lecturer=request.user)
     enrolled_students = session.course.students.all()
     
@@ -453,103 +575,3 @@ def session_attendance_stats(request, session_id):
         'late': late,
         'absent': total - present - late
     })
-
-
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.db.models import Q
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
-
-@lecturer_required
-def onboard_students(request, course_id):
-    course = get_object_or_404(Course, id=course_id)
-    
-    # Get all students from the program (efficient query)
-    students_queryset = CustomUser.objects.filter(
-        program__in=course.programs.all(), 
-        role='student'
-    ).only('id', 'username', 'email', 'first_name', 'last_name')  # Only fetch needed fields
-    
-    # Get already enrolled students IDs (for status display)
-    enrolled_ids = set(course.students.values_list('id', flat=True))
-    
-    # Handle search
-    search_query = request.GET.get('search', '')
-    if search_query:
-        students_queryset = students_queryset.filter(
-            Q(username__icontains=search_query) |
-            Q(email__icontains=search_query) |
-            Q(first_name__icontains=search_query) |
-            Q(last_name__icontains=search_query)
-        )
-    
-    # Pagination - 20 students per page for 1000+ students
-    paginator = Paginator(students_queryset, 20)  # Adjust: 20, 50, or 100 per page
-    page = request.GET.get('page', 1)
-    
-    try:
-        students = paginator.page(page)
-    except PageNotAnInteger:
-        students = paginator.page(1)
-    except EmptyPage:
-        students = paginator.page(paginator.num_pages)
-    
-    # AJAX request for dynamic loading
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        students_data = []
-        for student in students:
-            students_data.append({
-                'id': student.id,
-                'username': student.username,
-                'email': student.email,
-                'full_name': student.get_full_name() or student.username,
-                'initial': student.username[0].upper(),
-                'is_enrolled': student.id in enrolled_ids
-            })
-        
-        return JsonResponse({
-            'students': students_data,
-            'has_next': students.has_next(),
-            'has_previous': students.has_previous(),
-            'current_page': students.number,
-            'total_pages': paginator.num_pages,
-            'total_students': paginator.count,
-            'enrolled_count': len(enrolled_ids)
-        })
-    
-    # Regular request
-    return render(request, 'LecturerDashboard/onboard_students.html', {
-        'course': course,
-        'students': students,
-        'search_query': search_query,
-        'enrolled_ids': enrolled_ids,
-        'total_students': paginator.count,
-        'enrolled_count': len(enrolled_ids)
-    })
-
-# Also add the bulk enrollment API endpoint
-@lecturer_required
-@require_http_methods(["POST"])
-def bulk_enroll_students(request, course_id):
-    """AJAX endpoint for bulk enrollment without page reload"""
-    course = get_object_or_404(Course, id=course_id)
-    
-    try:
-        data = json.loads(request.body)
-        student_ids = data.get('student_ids', [])
-        
-        if not student_ids:
-            return JsonResponse({'error': 'No students selected'}, status=400)
-        
-        # Bulk add students (efficient for many records)
-        students_to_add = CustomUser.objects.filter(id__in=student_ids, role='student')
-        course.students.add(*students_to_add)
-        
-        return JsonResponse({
-            'success': True,
-            'message': f'Successfully enrolled {len(students_to_add)} students',
-            'enrolled_count': course.students.count()
-        })
-        
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)

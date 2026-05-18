@@ -14,7 +14,6 @@ from geopy.distance import geodesic
 from UserLogin.decorators import student_required
 from .models import Session, Attendance, Course
 
-# ============ ADD THESE MISSING FUNCTIONS ============
 
 def session_list(request):
     """List all sessions (for admin/debugging)"""
@@ -46,14 +45,16 @@ def student_dashboard(request):
 def mark_attendance(request, session_id):
     """Single unified attendance marking view with location + QR validation"""
     
-    # Rate limiting: prevent spam (5 attempts per minute)
-    rate_limit_key = f"attendance_rate_{request.user.id}_{session_id}"
-    if cache.get(rate_limit_key):
-        return JsonResponse({"error": "Too many attempts. Please wait."}, status=429)
-    cache.set(rate_limit_key, True, 60)  # 1 minute cooldown
     
     try:
-        data = json.loads(request.body)
+        # Parse request body
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            return JsonResponse({
+                "error": f"Invalid request format: {str(e)}"
+            }, status=400)
+        
         qr_data = data.get("qr_data")
         student_lat = data.get("latitude")
         student_lon = data.get("longitude")
@@ -62,49 +63,89 @@ def mark_attendance(request, session_id):
         if not qr_data:
             return JsonResponse({"error": "QR data required"}, status=400)
         
-        # Parse QR payload
+        # Parse QR payload - this is the critical part
         try:
+            # First, try to parse as JSON
             qr_payload = json.loads(qr_data)
             session_id_from_qr = qr_payload.get("session_id")
         except json.JSONDecodeError:
-            return JsonResponse({"error": "Invalid QR format"}, status=400)
+            # If not JSON, try to extract session ID from string format
+            # Check if it's the old format: "session-1-1234567890"
+            if qr_data.startswith("session-"):
+                parts = qr_data.split("-")
+                if len(parts) >= 2:
+                    try:
+                        session_id_from_qr = int(parts[1])
+                    except ValueError:
+                        return JsonResponse({"error": "Invalid QR format"}, status=400)
+                else:
+                    return JsonResponse({"error": "Invalid QR format"}, status=400)
+            else:
+                return JsonResponse({"error": "Invalid QR format"}, status=400)
         
-        # Validate session
-        if session_id_from_qr != session_id:
-            return JsonResponse({"error": "QR does not match this session"}, status=400)
+        # Validate session ID matches
+        if session_id_from_qr != int(session_id):
+            return JsonResponse({
+                "error": f"QR does not match this session. Expected {session_id}, got {session_id_from_qr}"
+            }, status=400)
         
-        session = get_object_or_404(Session, id=session_id, is_active=True)
+        # Get the session
+        try:
+            session = Session.objects.get(id=session_id, is_active=True)
+        except Session.DoesNotExist:
+            return JsonResponse({"error": "Session not found or has ended"}, status=404)
         
         # Check if student is enrolled
         if not session.course.students.filter(id=request.user.id).exists():
-            return JsonResponse({"error": "You are not enrolled in this course"}, status=403)
+            return JsonResponse({
+                "error": "You are not enrolled in this course"
+            }, status=403)
         
         # Check if already marked
-        if Attendance.objects.filter(student=request.user, session=session).exists():
-            return JsonResponse({"error": "Attendance already marked for this session"}, status=400)
+        existing_attendance = Attendance.objects.filter(
+            student=request.user, 
+            session=session
+        ).first()
+        
+        if existing_attendance:
+            return JsonResponse({
+                "success": True,
+                "message": f"Attendance already marked as {existing_attendance.status} on {existing_attendance.timestamp.strftime('%H:%M:%S')}",
+                "already_marked": True
+            }, status=200)
         
         # Check QR expiry
         if timezone.now() > session.qr_expiry:
-            return JsonResponse({"error": "QR code has expired"}, status=400)
+            return JsonResponse({
+                "error": f"QR code expired at {session.qr_expiry.strftime('%H:%M:%S')}"
+            }, status=400)
         
         # Validate location (if lecturer set location)
-        location_valid = True
         if session.latitude and session.longitude:
             if not student_lat or not student_lon:
-                return JsonResponse({"error": "Location access required"}, status=400)
-            
-            lecturer_coords = (session.latitude, session.longitude)
-            student_coords = (float(student_lat), float(student_lon))
-            
-            distance = geodesic(lecturer_coords, student_coords).meters
-            if distance > session.allowed_radius:
                 return JsonResponse({
-                    "error": f"Outside allowed location ({distance:.0f}m / {session.allowed_radius}m)"
+                    "error": "Location access required for this session"
                 }, status=400)
+            
+            try:
+                from geopy.distance import geodesic
+                lecturer_coords = (session.latitude, session.longitude)
+                student_coords = (float(student_lat), float(student_lon))
+                
+                distance = geodesic(lecturer_coords, student_coords).meters
+                allowed_radius = getattr(session, 'allowed_radius', 50)
+                
+                if distance > allowed_radius:
+                    return JsonResponse({
+                        "error": f"Too far from session location ({distance:.0f}m away, max {allowed_radius}m)"
+                    }, status=400)
+            except Exception as e:
+                print(f"Location validation error: {e}")
         
-        # Determine if student is late (e.g., 15 minutes after session start)
+        # Determine if student is late (15 minutes after session start)
         status = 'present'
-        if session.created_at + timedelta(minutes=15) < timezone.now():
+        late_threshold = session.created_at + timedelta(minutes=15)
+        if timezone.now() > late_threshold:
             status = 'late'
         
         # Create attendance record
@@ -112,22 +153,26 @@ def mark_attendance(request, session_id):
             student=request.user,
             session=session,
             status=status,
-            marked_latitude=student_lat,
-            marked_longitude=student_lon,
-            device_info=device_info,
+            marked_latitude=student_lat if student_lat else None,
+            marked_longitude=student_lon if student_lon else None,
+            device_info=device_info[:200] if device_info else "",
             ip_address=get_client_ip(request)
         )
         
         return JsonResponse({
             "success": True,
-            "message": f"Attendance marked as {status}",
-            "status": status
+            "message": f"✓ Attendance marked as {status.upper()}!",
+            "status": status,
+            "timestamp": attendance.timestamp.isoformat()
         })
         
-    except json.JSONDecodeError:
-        return JsonResponse({"error": "Invalid JSON"}, status=400)
     except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+        print(f"Unexpected error in mark_attendance: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            "error": f"Server error: {str(e)}"
+        }, status=500)
 
 def get_client_ip(request):
     """Extract client IP address"""
@@ -179,3 +224,6 @@ def session_detail(request, session_id):
         "allowed_radius": session.allowed_radius,
         "is_active": session.is_active
     })
+
+def test_view(request):
+    return JsonResponse({"status": "Working!", "message": "Student scanner app is accessible"})

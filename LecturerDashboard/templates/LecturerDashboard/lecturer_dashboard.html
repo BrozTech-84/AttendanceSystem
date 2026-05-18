@@ -1,6 +1,6 @@
-{% extends 'base.html' %}
-{% load static %}
-{% load custom_tags %}
+{% extends 'base.html' %} 
+{% load static %} 
+{% load custom_tags %} 
 
 {% block content %}
 <style>
@@ -214,7 +214,7 @@
 
   /* Add Course Button */
   .add-course-btn {
-    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    background: linear-gradient(135deg, #43e97b 0%, #bbdad4 100%);
     color: white;
     border: none;
     border-radius: 12px;
@@ -229,31 +229,16 @@
     box-shadow: 0 5px 15px rgba(67, 233, 123, 0.4);
   }
 
-  /* Loading Spinner */
-  .loading-spinner {
-    display: inline-block;
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    border-top-color: white;
-    animation: spin 0.6s linear infinite;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-
   /* Responsive */
   @media (max-width: 768px) {
     .dashboard-header h2 {
       font-size: 1.5rem;
     }
-    
+
     .course-header {
       flex-direction: column;
     }
-    
+
     .course-actions {
       margin-top: 1rem;
     }
@@ -287,16 +272,21 @@
         </h2>
         <p class="lecturer-info mb-0">
           <i class="fas fa-calendar-alt me-2"></i>
-          {{ request.user.programs.count }} Program(s) • 
-          {{ grouped_courses|length }} Course(s)
+          {{ request.user.programs.count }} Program(s) • {{ grouped_courses.values|length }} Course(s)
         </p>
       </div>
       <div class="col-md-4 text-md-end mt-3 mt-md-0">
         <div class="btn-group">
-          <button class="btn btn-light" onclick="window.location.href='{% url 'my_sessions' %}'">
+          <button
+            class="btn btn-light"
+            onclick="window.location.href='{% url 'my_sessions' %}'"
+          >
             <i class="fas fa-history"></i> My Sessions
           </button>
-          <button class="btn btn-light" onclick="window.location.href='{% url 'logout' %}'">
+          <button
+            class="btn btn-light"
+            onclick="window.location.href='{% url 'logout' %}'"
+          >
             <i class="fas fa-sign-out-alt"></i> Logout
           </button>
         </div>
@@ -306,33 +296,32 @@
 
   <!-- Quick Stats -->
   <div class="row mb-4">
-    <div class="col-md-4 mb-3 mb-md-0">
-      <div class="stat-card" onclick="window.location.href='#courses'">
-        <i class="fas fa-book-open text-primary"></i>
-        <div class="stat-number">
-          {% with total_courses=0 %}
-            {% for program, courses in grouped_courses.items %}
-              {% with total_courses=total_courses|add:courses|length %}
-              {% endwith %}
-            {% endfor %}
-            {{ grouped_courses.values|length }}
-          {% endwith %}
-        </div>
+    <div class="col-md-3 mb-3 mb-md-0">
+      <div class="stat-card" onclick="window.location.href = '#courses'">
+        <i class="fas fa-book-open text-primary fa-2x mb-2"></i>
+        <div class="stat-number">{{ grouped_courses.values|length }}</div>
         <div class="stat-label">Total Courses</div>
       </div>
     </div>
-    <div class="col-md-4 mb-3 mb-md-0">
-      <div class="stat-card" onclick="window.location.href='#programs'">
-        <i class="fas fa-graduation-cap text-success"></i>
+    <div class="col-md-3 mb-3 mb-md-0">
+      <div class="stat-card" onclick="window.location.href = '#programs'">
+        <i class="fas fa-graduation-cap text-success fa-2x mb-2"></i>
         <div class="stat-number">{{ request.user.programs.count }}</div>
-        <div class="stat-label">Programs</div>
+        <div class="stat-label">My Programs</div>
       </div>
     </div>
-    <div class="col-md-4">
-      <div class="stat-card" onclick="window.location.href='{% url 'add_course' %}'">
-        <i class="fas fa-plus-circle text-warning"></i>
-        <div class="stat-number">+</div>
-        <div class="stat-label">Add New Course</div>
+    <div class="col-md-3 mb-3 mb-md-0">
+      <div class="stat-card" onclick="window.location.href = '{% url 'my_sessions' %}'">
+        <i class="fas fa-chalkboard-user text-info fa-2x mb-2"></i>
+        <div class="stat-number">{{ sessions|length }}</div>
+        <div class="stat-label">Active Sessions</div>
+      </div>
+    </div>
+    <div class="col-md-3 mb-3 mb-md-0">
+      <div class="stat-card">
+        <i class="fas fa-users text-warning fa-2x mb-2"></i>
+        <div class="stat-number">{{ total_students|default:"0" }}</div>
+        <div class="stat-label">Total Students</div>
       </div>
     </div>
   </div>
@@ -340,17 +329,17 @@
   <!-- Programs Section -->
   <div id="programs" class="mb-4">
     <h4 class="mb-3">
-      <i class="fas fa-layer-group me-2" style="color: #667eea;"></i>
+      <i class="fas fa-layer-group me-2" style="color: #667eea"></i>
       My Programs
     </h4>
     <div class="mb-3">
       {% for program in request.user.programs.all %}
-        <span class="program-badge">
-          <i class="fas fa-code-branch me-1"></i>
-          {{ program.name }} ({{ program.code }})
-        </span>
+      <span class="program-badge">
+        <i class="fas fa-code-branch me-1"></i>
+        {{ program.name }} ({{ program.code }})
+      </span>
       {% empty %}
-        <span class="text-muted">No programs assigned</span>
+      <span class="text-muted">No programs assigned</span>
       {% endfor %}
     </div>
   </div>
@@ -361,7 +350,7 @@
     <div class="col-lg-7" id="courses">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
         <h4 class="mb-0">
-          <i class="fas fa-book me-2" style="color: #667eea;"></i>
+          <i class="fas fa-book me-2" style="color: #667eea"></i>
           My Courses
         </h4>
         <button class="btn add-course-btn" onclick="window.location.href='{% url 'add_course' %}'">
@@ -370,69 +359,75 @@
       </div>
 
       {% for program, courses in grouped_courses.items %}
-        <div class="mb-4">
-          <div class="d-flex align-items-center mb-3">
-            <div class="rounded-circle bg-primary p-2 me-2" style="width: 8px; height: 8px;"></div>
-            <h5 class="mb-0">{{ program.name }} <small class="text-muted">({{ program.code }})</small></h5>
-          </div>
-          
-          {% for course in courses %}
-            <div class="course-card">
-              <div class="course-header">
-                <div>
-                  <div class="course-title">
-                    {{ course.name }}
-                    <span class="course-code">{{ course.code }}</span>
-                  </div>
-                  <div class="course-stats mt-2">
-                    <span>
-                      <i class="fas fa-users text-primary"></i>
-                      {% with student_list=course_students|get_item:course.id %}
-                        {{ student_list|length }}
-                      {% endwith %} Students
-                    </span>
-                    <span>
-                      <i class="fas fa-clock text-info"></i>
-                      {{ course.sessions.count }} Sessions
-                    </span>
-                  </div>
-                </div>
-                <div class="course-actions">
-                  <button class="btn btn-outline-secondary btn-course me-2" 
-                          onclick="window.location.href='{% url 'onboard_students' course.id %}'">
-                    <i class="fas fa-user-plus me-1"></i> Onboard
-                  </button>
-                  <button class="btn btn-primary-custom btn-course" 
-                          onclick="startSessionWithLocation({{ course.id }})">
-                    <i class="fas fa-qrcode me-1"></i> Start Session
-                  </button>
-                </div>
+      <div class="mb-4">
+        <div class="d-flex align-items-center mb-3">
+          <div class="rounded-circle bg-primary p-2 me-2" style="width: 8px; height: 8px"></div>
+          <h5 class="mb-0">
+            {{ program.name }}
+            <small class="text-muted">({{ program.code }})</small>
+          </h5>
+        </div>
+
+        {% for course in courses %}
+        <div class="course-card">
+          <div class="course-header">
+            <div>
+              <div class="course-title">
+                {{ course.name }}
+                <span class="course-code">{{ course.code }}</span>
               </div>
-              
-              <!-- Quick Students Preview -->
-              {% with students=course_students|get_item:course.id %}
-                {% if students and students|length > 0 %}
-                  <div class="mt-3 pt-3 border-top">
-                    <small class="text-muted">
-                      <i class="fas fa-user-graduate"></i> 
-                      Recent students: 
-                      {% for student in students|slice:":3" %}
-                        {{ student.username }}{% if not forloop.last %}, {% endif %}
-                      {% endfor %}
-                      {% if students|length > 3 %}
-                        +{{ students|length|add:"-3" }} more
-                      {% endif %}
-                    </small>
-                  </div>
-                {% endif %}
-              {% endwith %}
+              <div class="course-stats mt-2">
+                <span>
+                  <i class="fas fa-users text-primary"></i>
+                  {% with student_list=course_students|get_item:course.id %}
+                    {{ student_list|length }}
+                  {% endwith %} Students
+                </span>
+                <span>
+                  <i class="fas fa-clock text-info"></i>
+                  {{ course.sessions.count }} Sessions
+                </span>
+              </div>
             </div>
-          {% endfor %}
+            <div class="course-actions">
+              <button
+                class="btn btn-outline-secondary btn-course me-2"
+                onclick="window.location.href='{% url 'onboard_students' course.id %}'"
+              >
+                <i class="fas fa-user-plus me-1"></i> Onboard
+              </button>
+              <button
+                class="btn btn-primary-custom btn-course"
+                onclick="startSessionWithLocation({{ course.id }}, this)"
+              >
+                <i class="fas fa-qrcode me-1"></i> Start Session
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Students Preview -->
+          {% with students=course_students|get_item:course.id %}
+            {% if students and students|length > 0 %}
+            <div class="mt-3 pt-3 border-top">
+              <small class="text-muted">
+                <i class="fas fa-user-graduate"></i>
+                Recent students: {% for student in students|slice:":3" %}
+                  {{ student.username }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+                {% if students|length > 3 %}
+                  +{{ students|length|add:"-3" }} more
+                {% endif %}
+              </small>
+            </div>
+            {% endif %}
+          {% endwith %}
         </div>
+        {% endfor %}
+      </div>
       {% empty %}
-        <div class="alert alert-info">
-          <i class="fas fa-info-circle"></i> No courses available. Click "Add Course" to get started!
-        </div>
+      <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> No courses available. Click "Add Course" to get started!
+      </div>
       {% endfor %}
     </div>
 
@@ -440,50 +435,54 @@
     <div class="col-lg-5">
       <div class="students-card">
         <h4 class="mb-3">
-          <i class="fas fa-users me-2" style="color: #667eea;"></i>
+          <i class="fas fa-users me-2" style="color: #667eea"></i>
           My Students
-          <small class="text-muted" style="font-size: 0.8rem;">(Enrolled by course)</small>
+          <small class="text-muted" style="font-size: 0.8rem">(Enrolled by course)</small>
         </h4>
-        
-        <div style="max-height: 600px; overflow-y: auto;">
+
+        <div style="max-height: 600px; overflow-y: auto">
           {% for program, courses in grouped_courses.items %}
             {% for course in courses %}
-              <div class="mb-3">
-                <div class="fw-bold text-primary mb-2">
-                  <i class="fas fa-book-open me-1"></i> {{ course.name }} ({{ course.code }})
-                </div>
-                {% with students=course_students|get_item:course.id %}
-                  {% if students and students|length > 0 %}
-                    {% for student in students %}
-                      <div class="student-item">
-                        <div class="student-avatar">
-                          {{ student.username|first|upper }}
-                        </div>
-                        <div class="student-info">
-                          <div class="student-name">{{ student.get_full_name|default:student.username }}</div>
-                          <div class="student-email">{{ student.email }}</div>
-                        </div>
-                        <div>
-                          <span class="badge bg-light text-dark">
-                            <i class="fas fa-user-check"></i> Active
-                          </span>
-                        </div>
-                      </div>
-                    {% endfor %}
-                  {% else %}
-                    <div class="text-muted text-center py-3">
-                      <i class="fas fa-user-slash"></i> No students enrolled yet
-                    </div>
-                  {% endif %}
-                {% endwith %}
+            <div class="mb-3">
+              <div class="fw-bold text-primary mb-2">
+                <i class="fas fa-book-open me-1"></i> {{ course.name }} ({{ course.code }})
               </div>
-              {% if not forloop.last %}<hr class="my-3">{% endif %}
+              {% with students=course_students|get_item:course.id %}
+                {% if students and students|length > 0 %}
+                  {% for student in students %}
+                  <div class="student-item">
+                    <div class="student-avatar">
+                      {{ student.username|first|upper }}
+                    </div>
+                    <div class="student-info">
+                      <div class="student-name">
+                        {{ student.get_full_name|default:student.username }}
+                      </div>
+                      <div class="student-email">{{ student.email }}</div>
+                    </div>
+                    <div>
+                      <span class="badge bg-light text-dark">
+                        <i class="fas fa-user-check"></i> Active
+                      </span>
+                    </div>
+                  </div>
+                  {% endfor %}
+                {% else %}
+                <div class="text-muted text-center py-3">
+                  <i class="fas fa-user-slash"></i> No students enrolled yet
+                </div>
+                {% endif %}
+              {% endwith %}
+            </div>
+            {% if not forloop.last %}
+            <hr class="my-3">
+            {% endif %}
             {% endfor %}
           {% empty %}
-            <div class="text-center py-5 text-muted">
-              <i class="fas fa-book fa-3x mb-3 opacity-25"></i>
-              <p>No courses available to display students</p>
-            </div>
+          <div class="text-center py-5 text-muted">
+            <i class="fas fa-book fa-3x mb-3 opacity-25"></i>
+            <p>No courses available to display students</p>
+          </div>
           {% endfor %}
         </div>
       </div>
@@ -498,7 +497,7 @@
       const cookies = document.cookie.split(";");
       for (let i = 0; i < cookies.length; i++) {
         const cookie = cookies[i].trim();
-        if (cookie.substring(0, name.length + 1) === name + "=") {
+        if (cookie.substring(0, name.length + 1) === (name + "=")) {
           cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
           break;
         }
@@ -507,18 +506,17 @@
     return cookieValue;
   }
 
-  function startSessionWithLocation(courseId) {
+  function startSessionWithLocation(courseId, buttonElement) {
     if (!navigator.geolocation) {
       alert("Geolocation not supported by your browser");
       return;
     }
-    
-    // Show loading state on button
-    const btn = event.target.closest('button');
+
+    const btn = buttonElement;
     const originalText = btn.innerHTML;
     btn.disabled = true;
-    btn.innerHTML = '<span class="loading-spinner me-2"></span> Getting location...';
-    
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Getting location...';
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const lat = position.coords.latitude;
@@ -530,13 +528,18 @@
             "Content-Type": "application/json",
             "X-CSRFToken": getCookie("csrftoken"),
           },
-          body: JSON.stringify({ latitude: lat, longitude: lon }),
+          body: JSON.stringify({ 
+            latitude: lat, 
+            longitude: lon,
+            topic: "Lecture",
+            duration_minutes: 5,
+            allowed_radius: 100
+          }),
         })
           .then((response) => response.json())
           .then((data) => {
-            if (data.session_id) {
-              // Redirect to session page
-              window.location.href = `/lecturer/start-session/${courseId}/`;
+            if (data.success) {
+              window.location.href = `/lecturer/start-session/${courseId}/?session_id=${data.session_id}`;
             } else {
               alert("Failed to create session: " + (data.error || "Unknown error"));
               btn.disabled = false;
@@ -552,9 +555,9 @@
       },
       (error) => {
         let errorMsg = "";
-        switch(error.code) {
+        switch (error.code) {
           case error.PERMISSION_DENIED:
-            errorMsg = "Location access denied. Please enable location permissions to start a session.";
+            errorMsg = "Location access denied. Please enable location permissions.";
             break;
           case error.POSITION_UNAVAILABLE:
             errorMsg = "Location information unavailable. Please check your GPS.";
@@ -571,23 +574,10 @@
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
+        timeout: 15000,
+        maximumAge: 0,
       }
     );
   }
-</script>
-
-<!-- Smooth scroll for anchor links -->
-<script>
-  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-      e.preventDefault();
-      const target = document.querySelector(this.getAttribute('href'));
-      if (target) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    });
-  });
 </script>
 {% endblock %}

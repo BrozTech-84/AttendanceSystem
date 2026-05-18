@@ -115,6 +115,26 @@
     font-size: 0.85rem;
   }
 
+  .badge-active {
+    background: #28a745;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+  }
+
+  .badge-ended {
+    background: #6c757d;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+  }
+
   .session-list {
     max-height: 0;
     overflow: hidden;
@@ -163,6 +183,7 @@
     display: flex;
     gap: 1rem;
     margin-top: 0.5rem;
+    flex-wrap: wrap;
   }
 
   .stat-badge {
@@ -187,19 +208,33 @@
     color: #856404;
   }
 
-  .btn-view-report {
-    background: var(--primary-gradient);
-    color: white;
-    border: none;
+  .btn-view-report, .btn-end-session {
     padding: 0.5rem 1rem;
     border-radius: 8px;
     font-size: 0.85rem;
     transition: var(--transition);
+    border: none;
+    cursor: pointer;
+  }
+
+  .btn-view-report {
+    background: var(--primary-gradient);
+    color: white;
   }
 
   .btn-view-report:hover {
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+  }
+
+  .btn-end-session {
+    background: #dc3545;
+    color: white;
+  }
+
+  .btn-end-session:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
   }
 
   .empty-state {
@@ -241,6 +276,11 @@
     .info-chip {
       width: 100%;
     }
+    
+    .attendance-stats {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
   }
 </style>
 
@@ -275,21 +315,13 @@
     </div>
     <div class="stat-card">
       <i class="fas fa-chalkboard-teacher"></i>
-      <div class="stat-number">
-        {% with total_sessions=0 %}
-          {% for item in course_sessions %}
-            {% with total_sessions=total_sessions|add:item.session_count %}
-            {% endwith %}
-          {% endfor %}
-          {{ total_sessions }}
-        {% endwith %}
-      </div>
+      <div class="stat-number">{{ total_sessions|default:"0" }}</div>
       <div class="stat-label">Total Sessions</div>
     </div>
     <div class="stat-card">
-      <i class="fas fa-users"></i>
-      <div class="stat-number" id="totalStudents">Loading...</div>
-      <div class="stat-label">Total Students Enrolled</div>
+      <i class="fas fa-play-circle text-success"></i>
+      <div class="stat-number">{{ active_sessions_count|default:"0" }}</div>
+      <div class="stat-label">Active Sessions</div>
     </div>
   </div>
 
@@ -306,7 +338,7 @@
             <div class="mt-1">
               <span class="badge-custom">
                 <i class="fas fa-calendar-alt me-1"></i>
-                {{ item.sessions|length }} Sessions
+                {{ item.session_count }} Sessions
               </span>
               <span class="badge-custom ms-2">
                 <i class="fas fa-users me-1"></i>
@@ -319,62 +351,76 @@
       </div>
       
       <div class="session-list" id="sessions-{{ item.course.id }}">
-        {% if item.sessions %}
-          {% for session in item.sessions %}
-            <div class="session-item" data-session-id="{{ session.id }}">
-              <div class="d-flex justify-content-between align-items-start flex-wrap">
-                <div>
-                  <h6 class="mb-2">
-                    <i class="fas fa-qrcode text-primary me-2"></i>
-                    Session #{{ forloop.revcounter }}
-                  </h6>
-                  <div class="session-info">
-                    <span class="info-chip">
-                      <i class="fas fa-id-card"></i>
-                      ID: {{ session.id }}
-                    </span>
-                    <span class="info-chip">
-                      <i class="fas fa-calendar-day"></i>
-                      Date: {{ session.created_at|date:"l, F j, Y" }}
-                    </span>
-                    <span class="info-chip">
-                      <i class="fas fa-clock"></i>
-                      Time: {{ session.created_at|time:"g:i A" }}
-                    </span>
-                    <span class="info-chip">
-                      <i class="fas fa-map-marker-alt"></i>
-                      {% if session.location_name %}
-                        {{ session.location_name|truncatechars:30 }}
-                      {% elif session.latitude and session.longitude %}
-                        📍 {{ session.latitude|floatformat:4 }}, {{ session.longitude|floatformat:4 }}
-                      {% else %}
-                        Not recorded
-                      {% endif %}
-                    </span>
-                  </div>
-                  
-                  <!-- Attendance Summary (if available) -->
-                  <div class="attendance-stats mt-2" id="stats-{{ session.id }}">
-                    <div class="spinner-border spinner-border-sm text-primary" role="status">
-                      <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <span class="text-muted ms-2">Loading attendance...</span>
-                  </div>
+        {% for session in item.sessions %}
+          <div class="session-item" data-session-id="{{ session.id }}">
+            <div class="d-flex justify-content-between align-items-start flex-wrap">
+              <div class="flex-grow-1">
+                <h6 class="mb-2">
+                  <i class="fas fa-qrcode text-primary me-2"></i>
+                  {{ session.topic|default:"Lecture" }}
+                  {% if session.is_active %}
+                    <span class="badge-active"><i class="fas fa-play-circle"></i> Active</span>
+                  {% else %}
+                    <span class="badge-ended"><i class="fas fa-check-circle"></i> Ended</span>
+                  {% endif %}
+                </h6>
+                <div class="session-info">
+                  <span class="info-chip">
+                    <i class="fas fa-id-card"></i>
+                    ID: {{ session.id }}
+                  </span>
+                  <span class="info-chip">
+                    <i class="fas fa-calendar-day"></i>
+                    Date: {{ session.created_at|date:"l, F j, Y" }}
+                  </span>
+                  <span class="info-chip">
+                    <i class="fas fa-clock"></i>
+                    Time: {{ session.created_at|time:"g:i A" }}
+                  </span>
+                  {% if session.qr_expiry %}
+                  <span class="info-chip">
+                    <i class="fas fa-hourglass-half"></i>
+                    QR Expiry: {{ session.qr_expiry|time:"g:i A" }}
+                  </span>
+                  {% endif %}
+                  <span class="info-chip">
+                    <i class="fas fa-map-marker-alt"></i>
+                    {% if session.location_name %}
+                      {{ session.location_name|truncatechars:30 }}
+                    {% elif session.latitude and session.longitude %}
+                      📍 {{ session.latitude|floatformat:4 }}, {{ session.longitude|floatformat:4 }}
+                    {% else %}
+                      Not recorded
+                    {% endif %}
+                  </span>
                 </div>
                 
-                <div class="mt-2 mt-sm-0">
-                  <button class="btn-view-report" onclick="viewReport({{ session.id }})">
-                    <i class="fas fa-chart-line me-1"></i> View Report
-                  </button>
+                <!-- Attendance Summary -->
+                <div class="attendance-stats mt-2" id="stats-{{ session.id }}">
+                  <div class="spinner-border spinner-border-sm text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                  <span class="text-muted ms-2">Loading attendance...</span>
                 </div>
               </div>
+              
+              <div class="mt-2 mt-sm-0">
+                <button class="btn-view-report me-2" onclick="viewReport({{ session.id }})">
+                  <i class="fas fa-chart-line me-1"></i> Report
+                </button>
+                {% if session.is_active %}
+                <button class="btn-end-session" onclick="endSession({{ session.id }})">
+                  <i class="fas fa-stop me-1"></i> End
+                </button>
+                {% endif %}
+              </div>
             </div>
-          {% endfor %}
-        {% else %}
+          </div>
+        {% empty %}
           <div class="p-4 text-center text-muted">
             <i class="fas fa-info-circle"></i> No sessions found for this course.
           </div>
-        {% endif %}
+        {% endfor %}
       </div>
     </div>
   {% empty %}
@@ -390,6 +436,21 @@
 </div>
 
 <script>
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + "=")) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
   // Course toggle function
   function toggleCourse(courseId) {
     const sessionsDiv = document.getElementById(`sessions-${courseId}`);
@@ -453,21 +514,30 @@
     window.location.href = `/lecturer/session-report/${sessionId}/`;
   }
   
-  // Calculate total students across all courses
-  function calculateTotalStudents() {
-    let total = 0;
-    const courseCards = document.querySelectorAll('.course-card');
-    courseCards.forEach(card => {
-      const studentsText = card.querySelector('.badge-custom:last-child')?.textContent || '';
-      const match = studentsText.match(/(\d+)/);
-      if (match) total += parseInt(match[1]);
-    });
-    
-    const totalStudentsSpan = document.getElementById('totalStudents');
-    if (totalStudentsSpan) totalStudentsSpan.textContent = total;
+  // End session
+  function endSession(sessionId) {
+    if (confirm('Are you sure you want to end this session? Students will no longer be able to mark attendance.')) {
+      fetch(`/lecturer/end-session/${sessionId}/`, {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": getCookie("csrftoken"),
+        },
+      })
+        .then(response => {
+          if (response.ok) {
+            location.reload();
+          } else {
+            alert("Failed to end session");
+          }
+        })
+        .catch(error => {
+          console.error("Error:", error);
+          alert("Network error occurred");
+        });
+    }
   }
   
-  // Expand first course by default (optional)
+  // Expand first course by default
   function expandFirstCourse() {
     const firstCourse = document.querySelector('.course-card');
     if (firstCourse) {
@@ -525,10 +595,7 @@
   
   // Initialize
   document.addEventListener('DOMContentLoaded', () => {
-    calculateTotalStudents();
-    // expandFirstCourse(); // Uncomment to auto-expand first course
-    
-    // Show keyboard shortcuts hint
+    expandFirstCourse();
     console.log('💡 Keyboard shortcuts: Ctrl+E (Expand all), Ctrl+C (Collapse all)');
   });
 </script>

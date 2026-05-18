@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Camera Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #121212;
+            color: white;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 18px;
+            width: 100%;
+            cursor: pointer;
+        }
+        video {
+            width: 100%;
+            margin-top: 20px;
+            border-radius: 8px;
+            background: black;
+        }
+        .info {
+            background: #2a2a2a;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📷 Camera Test</h1>
+        <div id="info" class="info">Ready to test camera</div>
+        <button onclick="testCamera()">Start Camera</button>
+        <video id="testVideo" autoplay playsinline muted></video>
+    </div>
+
+    <script>
+        async function testCamera() {
+            const info = document.getElementById('info');
+            const video = document.getElementById('testVideo');
+            
+            try {
+                info.innerHTML = 'Requesting camera access...';
+                info.style.background = '#2a2a2a';
+                
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' } 
+                });
+                
+                video.srcObject = stream;
+                await video.play();
+                
+                info.innerHTML = '✅ Camera is working! You should see video above.';
+                info.style.background = '#1a3a1a';
+                info.style.color = '#4CAF50';
+                
+                // Stop after 10 seconds
+                setTimeout(() => {
+                    stream.getTracks().forEach(track => track.stop());
+                    video.srcObject = null;
+                    info.innerHTML = 'Camera stopped. Click button again to test.';
+                    info.style.background = '#2a2a2a';
+                    info.style.color = 'white';
+                }, 10000);
+                
+            } catch (error) {
+                info.innerHTML = '❌ Camera error: ' + error.message;
+                info.style.background = '#3a1a1a';
+                info.style.color = '#ff6b6b';
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>

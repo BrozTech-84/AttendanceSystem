@@ -1,0 +1,655 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+  :root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    --transition: all 0.3s ease;
+  }
+
+  body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+  }
+
+  .report-header {
+    background: var(--primary-gradient);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    color: white;
+    box-shadow: var(--card-shadow);
+  }
+
+  .report-header h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: var(--card-shadow);
+    transition: var(--transition);
+    cursor: pointer;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-5px);
+  }
+
+  .stat-card.active {
+    border: 2px solid #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+  }
+
+  .stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+  }
+
+  .stat-label {
+    color: #666;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+  }
+
+  .filter-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .filter-btn {
+    padding: 0.5rem 1.25rem;
+    border-radius: 25px;
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .filter-btn.all {
+    background: #6c757d;
+    color: white;
+  }
+
+  .filter-btn.present {
+    background: #28a745;
+    color: white;
+  }
+
+  .filter-btn.absent {
+    background: #dc3545;
+    color: white;
+  }
+
+  .filter-btn.late {
+    background: #ffc107;
+    color: #333;
+  }
+
+  .filter-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.05);
+  }
+
+  .filter-btn.active {
+    box-shadow: 0 0 0 3px rgba(0,0,0,0.1);
+    transform: scale(1.02);
+  }
+
+  .table-container {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: var(--card-shadow);
+    overflow-x: auto;
+  }
+
+  .table {
+    margin-bottom: 0;
+  }
+
+  .table thead th {
+    background: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .status-present {
+    background: #d4edda;
+    color: #155724;
+  }
+
+  .status-late {
+    background: #fff3cd;
+    color: #856404;
+  }
+
+  .status-absent {
+    background: #f8d7da;
+    color: #721c24;
+  }
+
+  .btn-print, .btn-export {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    transition: var(--transition);
+    border: none;
+    cursor: pointer;
+  }
+
+  .btn-print {
+    background: #6c757d;
+    color: white;
+  }
+
+  .btn-export {
+    background: #28a745;
+    color: white;
+  }
+
+  .btn-print:hover, .btn-export:hover {
+    transform: translateY(-2px);
+  }
+
+  .session-info {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .progress {
+    height: 30px;
+    border-radius: 15px;
+    overflow: hidden;
+  }
+
+  .export-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+
+  .export-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .export-btn.csv {
+    background: #28a745;
+    color: white;
+  }
+
+  .export-btn.pdf {
+    background: #dc3545;
+    color: white;
+  }
+
+  .export-btn.print {
+    background: #6c757d;
+    color: white;
+  }
+
+  .filter-summary {
+    background: #e9ecef;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    margin-bottom: 1rem;
+    display: inline-block;
+  }
+
+  @media print {
+    .btn-print, .btn-export, .btn-back, .no-print, .filter-buttons, .export-buttons, .stat-card {
+      display: none !important;
+    }
+    .report-header {
+      background: #333;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .table-container {
+      box-shadow: none;
+    }
+    .session-info {
+      break-inside: avoid;
+    }
+  }
+</style>
+
+<div class="container mt-4">
+  <!-- Report Header -->
+  <div class="report-header">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <h2>
+          <i class="fas fa-chart-line me-3"></i>
+          Attendance Report
+        </h2>
+        <p class="mb-0">
+          <i class="fas fa-calendar-alt me-2"></i>
+          {{ session.created_at|date:"l, F j, Y - g:i A" }}
+        </p>
+      </div>
+      <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <button class="btn-print me-2 no-print" onclick="window.print()">
+          <i class="fas fa-print me-1"></i> Print
+        </button>
+        <a href="{% url 'export_attendance_csv' session.id %}" class="btn-export no-print">
+          <i class="fas fa-download me-1"></i> Export CSV
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Session Information -->
+  <div class="session-info">
+    <div class="row">
+      <div class="col-md-6">
+        <p class="mb-2">
+          <strong><i class="fas fa-book-open me-2 text-primary"></i>Course:</strong>
+          {{ session.course.name }} ({{ session.course.code }})
+        </p>
+        <p class="mb-2">
+          <strong><i class="fas fa-tag me-2 text-primary"></i>Topic:</strong>
+          {{ session.topic }}
+        </p>
+        <p class="mb-2">
+          <strong><i class="fas fa-user-tie me-2 text-primary"></i>Lecturer:</strong>
+          {{ session.lecturer.get_full_name|default:session.lecturer.username }}
+        </p>
+      </div>
+      <div class="col-md-6">
+        <p class="mb-2">
+          <strong><i class="fas fa-clock me-2 text-primary"></i>Session Duration:</strong>
+          {{ session.created_at|time:"g:i A" }} - {{ session.qr_expiry|time:"g:i A" }}
+        </p>
+        <p class="mb-2">
+          <strong><i class="fas fa-map-marker-alt me-2 text-primary"></i>Location:</strong>
+          {% if session.location_name %}
+            {{ session.location_name }}
+          {% elif session.latitude and session.longitude %}
+            {{ session.latitude|floatformat:4 }}, {{ session.longitude|floatformat:4 }}
+          {% else %}
+            Not recorded
+          {% endif %}
+        </p>
+        <p class="mb-2">
+          <strong><i class="fas fa-qrcode me-2 text-primary"></i>Status:</strong>
+          {% if session.is_active %}
+            <span class="badge bg-success">Active</span>
+          {% else %}
+            <span class="badge bg-secondary">Ended</span>
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Cards (Clickable for filtering) -->
+  <div class="row mb-4">
+    <div class="col-md-3 mb-3">
+      <div class="stat-card" data-filter="all" onclick="filterTable('all')">
+        <i class="fas fa-users fa-2x text-primary mb-2"></i>
+        <div class="stat-number text-primary">{{ total }}</div>
+        <div class="stat-label">All Students</div>
+      </div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="stat-card" data-filter="present" onclick="filterTable('present')">
+        <i class="fas fa-user-check fa-2x text-success mb-2"></i>
+        <div class="stat-number text-success">{{ present }}</div>
+        <div class="stat-label">Present</div>
+      </div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="stat-card" data-filter="late" onclick="filterTable('late')">
+        <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+        <div class="stat-number text-warning">{{ late }}</div>
+        <div class="stat-label">Late</div>
+      </div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="stat-card" data-filter="absent" onclick="filterTable('absent')">
+        <i class="fas fa-user-times fa-2x text-danger mb-2"></i>
+        <div class="stat-number text-danger">{{ absent }}</div>
+        <div class="stat-label">Absent</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attendance Progress -->
+  <div class="mb-4">
+    <div class="d-flex justify-content-between mb-2">
+      <span><strong>Attendance Rate: {{ attendance_percentage }}%</strong></span>
+      <span>{{ present|add:late }} / {{ total }} students</span>
+    </div>
+    <div class="progress">
+      <div class="progress-bar bg-success" role="progressbar" 
+           style="width: {% widthratio present total 100 %}%">
+        {% if present > 0 %}Present: {% widthratio present total 100 %}%{% endif %}
+      </div>
+      <div class="progress-bar bg-warning" role="progressbar" 
+           style="width: {% widthratio late total 100 %}%">
+        {% if late > 0 %}Late: {% widthratio late total 100 %}%{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Buttons and Export Options -->
+  <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
+    <div class="filter-buttons no-print">
+      <button class="filter-btn all active" onclick="filterTable('all')">
+        <i class="fas fa-users"></i> All ({{ total }})
+      </button>
+      <button class="filter-btn present" onclick="filterTable('present')">
+        <i class="fas fa-user-check"></i> Present ({{ present }})
+      </button>
+      <button class="filter-btn late" onclick="filterTable('late')">
+        <i class="fas fa-clock"></i> Late ({{ late }})
+      </button>
+      <button class="filter-btn absent" onclick="filterTable('absent')">
+        <i class="fas fa-user-times"></i> Absent ({{ absent }})
+      </button>
+    </div>
+    
+    <div class="export-buttons no-print">
+      <button class="export-btn csv" onclick="exportToCSV()">
+        <i class="fas fa-file-csv"></i> Export Current View
+      </button>
+    </div>
+  </div>
+
+  <!-- Filter Summary -->
+  <div id="filterSummary" class="filter-summary no-print" style="display: none;">
+    <i class="fas fa-filter me-1"></i> 
+    Showing: <span id="filterTypeDisplay">All Students</span>
+    <span id="filterCountDisplay"></span>
+  </div>
+
+  <!-- Student List Table -->
+  <div class="table-container">
+    <h5 class="mb-3">
+      <i class="fas fa-list me-2 text-primary"></i>
+      Student Attendance Details
+    </h5>
+    
+    <div class="table-responsive">
+      <table class="table table-hover" id="attendanceTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Student Name</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Time Marked</th>
+            <th>Location</th>
+            <th>Device</th>
+          </tr>
+        </thead>
+        <tbody id="attendanceTableBody">
+          {% for student in student_data %}
+          <tr data-status="{{ student.status }}">
+            <td>{{ forloop.counter }}</td>
+            <td>
+              <strong>{{ student.student.get_full_name|default:student.student.username }}</strong>
+              <br>
+              <small class="text-muted">ID: {{ student.student.username }}</small>
+            </td>
+            <td>{{ student.student.email }}</td>
+            <td>
+              <span class="status-badge 
+                {% if student.status == 'present' %}status-present
+                {% elif student.status == 'late' %}status-late
+                {% else %}status-absent{% endif %}">
+                {% if student.status == 'present' %}
+                  <i class="fas fa-check-circle"></i> Present
+                {% elif student.status == 'late' %}
+                  <i class="fas fa-clock"></i> Late
+                {% else %}
+                  <i class="fas fa-times-circle"></i> Absent
+                {% endif %}
+              </span>
+            </td>
+            <td>
+              {% if student.timestamp %}
+                {{ student.timestamp|date:"g:i:s A" }}
+              {% else %}
+                <span class="text-muted">--:--:--</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if student.location != 'N/A' %}
+                <small>{{ student.location|truncatechars:30 }}</small>
+              {% else %}
+                <span class="text-muted">Not tracked</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if student.device != 'N/A' %}
+                <small>{{ student.device|truncatechars:25 }}</small>
+              {% else %}
+                <span class="text-muted">--</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="text-center py-4">
+              <i class="fas fa-info-circle fa-2x text-muted mb-2 d-block"></i>
+              No students enrolled in this course yet.
+              <br>
+              <a href="{% url 'onboard_students' session.course.id %}" class="btn btn-sm btn-primary mt-2">
+                <i class="fas fa-user-plus"></i> Add Students
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentFilter = 'all';
+  
+  // Filter table function
+  function filterTable(filterType) {
+    currentFilter = filterType;
+    const rows = document.querySelectorAll('#attendanceTableBody tr');
+    let visibleCount = 0;
+    
+    // Update active state on stat cards
+    document.querySelectorAll('.stat-card').forEach(card => {
+      card.classList.remove('active');
+      if (card.getAttribute('data-filter') === filterType) {
+        card.classList.add('active');
+      }
+    });
+    
+    // Update active state on filter buttons
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.classList.remove('active');
+      if (btn.classList.contains(filterType)) {
+        btn.classList.add('active');
+      }
+    });
+    
+    // Filter the rows
+    rows.forEach(row => {
+      if (filterType === 'all') {
+        row.style.display = '';
+        visibleCount++;
+      } else {
+        const status = row.getAttribute('data-status');
+        if (status === filterType) {
+          row.style.display = '';
+          visibleCount++;
+        } else {
+          row.style.display = 'none';
+        }
+      }
+    });
+    
+    // Update filter summary
+    const filterSummary = document.getElementById('filterSummary');
+    const filterTypeDisplay = document.getElementById('filterTypeDisplay');
+    const filterCountDisplay = document.getElementById('filterCountDisplay');
+    
+    let filterText = '';
+    switch(filterType) {
+      case 'all':
+        filterText = 'All Students';
+        break;
+      case 'present':
+        filterText = 'Present Students';
+        break;
+      case 'late':
+        filterText = 'Late Students';
+        break;
+      case 'absent':
+        filterText = 'Absent Students';
+        break;
+    }
+    
+    filterTypeDisplay.textContent = filterText;
+    filterCountDisplay.textContent = `(${visibleCount} students)`;
+    filterSummary.style.display = 'inline-block';
+    
+    // Update serial numbers
+    updateSerialNumbers();
+  }
+  
+  // Update serial numbers after filtering
+  function updateSerialNumbers() {
+    const visibleRows = document.querySelectorAll('#attendanceTableBody tr[style=""]');
+    let counter = 1;
+    visibleRows.forEach(row => {
+      const firstCell = row.querySelector('td:first-child');
+      if (firstCell) {
+        firstCell.textContent = counter++;
+      }
+    });
+  }
+  
+  // Export current view to CSV
+  function exportToCSV() {
+    const rows = document.querySelectorAll('#attendanceTableBody tr');
+    const visibleRows = [];
+    
+    // Get visible rows only
+    rows.forEach(row => {
+      if (row.style.display !== 'none') {
+        visibleRows.push(row);
+      }
+    });
+    
+    if (visibleRows.length === 0) {
+      alert('No data to export');
+      return;
+    }
+    
+    // Prepare CSV data
+    const csvData = [];
+    
+    // Add headers
+    csvData.push(['Student Name', 'Student ID', 'Email', 'Status', 'Time Marked', 'Location', 'Device']);
+    
+    // Add data rows
+    visibleRows.forEach(row => {
+      const cells = row.querySelectorAll('td');
+      if (cells.length >= 7) {
+        const name = cells[1].querySelector('strong')?.textContent.trim() || '';
+        const studentId = cells[1].querySelector('small')?.textContent.replace('ID: ', '').trim() || '';
+        const email = cells[2].textContent.trim();
+        const status = cells[3].querySelector('.status-badge')?.textContent.trim() || '';
+        const timeMarked = cells[4].textContent.trim();
+        const location = cells[5].textContent.trim();
+        const device = cells[6].textContent.trim();
+        
+        csvData.push([name, studentId, email, status, timeMarked, location, device]);
+      }
+    });
+    
+    // Convert to CSV string
+    const csvContent = csvData.map(row => row.join(',')).join('\n');
+    
+    // Download file
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const filterText = currentFilter === 'all' ? 'full_report' : currentFilter;
+    a.href = url;
+    a.download = `attendance_${filterText}_session_{{ session.id }}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  }
+  
+  // Add search functionality
+  document.addEventListener('DOMContentLoaded', function() {
+    const table = document.getElementById('attendanceTable');
+    if (table) {
+      const searchContainer = document.createElement('div');
+      searchContainer.className = 'mb-3 no-print';
+      searchContainer.innerHTML = `
+        <div class="input-group" style="max-width: 300px;">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+          <input type="text" id="searchInput" class="form-control" placeholder="Search students...">
+        </div>
+      `;
+      
+      const tableContainer = document.querySelector('.table-responsive');
+      if (tableContainer) {
+        tableContainer.parentNode.insertBefore(searchContainer, tableContainer);
+      }
+      
+      const searchInput = document.getElementById('searchInput');
+      if (searchInput) {
+        searchInput.addEventListener('keyup', function() {
+          const searchText = this.value.toLowerCase();
+          const rows = document.querySelectorAll('#attendanceTableBody tr');
+          
+          rows.forEach(row => {
+            // Only search within currently filtered rows
+            if (row.style.display !== 'none') {
+              const text = row.textContent.toLowerCase();
+              if (text.includes(searchText)) {
+                row.style.display = '';
+              } else {
+                row.style.display = 'none';
+              }
+            }
+          });
+          
+          updateSerialNumbers();
+        });
+      }
+    }
+  });
+</script>
+{% endblock %}
