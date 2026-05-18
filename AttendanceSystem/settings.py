@@ -1,17 +1,19 @@
 """
 Django settings for AttendanceSystem project.
 """
-
-from pathlib import Path
-from decouple import config
 import os
 import sys
+import dj_database_ur
+from pathlib import Path
+from decouple import config
+l
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-please-change-this-to-a-secure-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
@@ -33,6 +35,7 @@ INSTALLED_APPS = [
     'corsheaders',  # Added for CORS support
     'whitenoise',
     'crispy_forms',
+    'sslserver',  # For local HTTPS testing
     
     # MyApps
     'UserLogin',
@@ -75,7 +78,7 @@ TEMPLATES = [
 ASGI_APPLICATION = 'AttendanceSystem.asgi.application'
 WSGI_APPLICATION = 'AttendanceSystem.wsgi.application'
 
-# Channel Layers - Use Redis for production (fallback to in-memory for development)
+# Channel Layers - Redis for production (fallback to in-memory for development)
 if not DEBUG:
     CHANNEL_LAYERS = {
         "default": {
@@ -92,7 +95,7 @@ else:
         },
     }
 
-# Database - Use PostgreSQL for production, SQLite for development
+#Database - Use PostgreSQL for production, SQLite for development
 if not DEBUG:
     DATABASES = {
         'default': {
@@ -112,6 +115,7 @@ else:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+
 
 # Custom User Model
 AUTH_USER_MODEL = 'UserLogin.CustomUser'
