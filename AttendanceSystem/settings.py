@@ -13,9 +13,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-dev-key-change-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True  # Keep True for local testing, will be overridden by env var
+DEBUG = False  
 
-ALLOWED_HOSTS = ['*']  # Allow all for local testing
+ALLOWED_HOSTS = ['*'
+    'attendancesystem-8frd.onrender.com',
+    '.onrender.com',  # allows all Render subdomains
+    'localhost',
+    '127.0.0.1',
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://attendancesystem-8frd.onrender.com',
+    'https://*.onrender.com',
+]
 
 # Application definition
 INSTALLED_APPS = [
@@ -116,9 +126,9 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Simple security settings for local development
-SECURE_SSL_REDIRECT = False
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = False
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
 # Cache - Use local memory
 CACHES = {
