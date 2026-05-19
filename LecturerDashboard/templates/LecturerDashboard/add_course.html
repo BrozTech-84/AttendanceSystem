@@ -1,7 +1,4 @@
-{% extends 'base.html' %}
-{% load static %}
-
-{% block content %}
+{% extends 'base.html' %} {% load static %} {% block content %}
 <style>
   :root {
     --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -252,7 +249,9 @@
   }
 
   @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   /* Responsive */
@@ -260,19 +259,19 @@
     .page-header h2 {
       font-size: 1.5rem;
     }
-    
+
     .form-card-body {
       padding: 1.5rem;
     }
-    
+
     .programs-grid {
       grid-template-columns: 1fr;
     }
-    
+
     .form-actions {
       flex-direction: column;
     }
-    
+
     .form-actions button,
     .form-actions a {
       width: 100%;
@@ -342,37 +341,38 @@
         Course Information
       </h4>
     </div>
-    
+
     <div class="form-card-body">
       <!-- Success Message -->
-      {% if messages %}
-        {% for message in messages %}
-          <div class="alert-success">
-            <i class="fas fa-check-circle fa-lg"></i>
-            <span>{{ message }}</span>
-            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-          </div>
-        {% endfor %}
-      {% endif %}
+      {% if messages %} {% for message in messages %}
+      <div class="alert-success">
+        <i class="fas fa-check-circle fa-lg"></i>
+        <span>{{ message }}</span>
+        <button
+          type="button"
+          class="btn-close ms-auto"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+        ></button>
+      </div>
+      {% endfor %} {% endif %}
 
       <!-- Form Errors -->
       {% if form.errors %}
-        <div class="alert-danger">
-          <i class="fas fa-exclamation-triangle me-2"></i>
-          <strong>Please correct the following errors:</strong>
-          <ul class="mb-0 mt-2">
-            {% for field, errors in form.errors.items %}
-              {% for error in errors %}
-                <li>{{ field|title }}: {{ error }}</li>
-              {% endfor %}
-            {% endfor %}
-          </ul>
-        </div>
+      <div class="alert-danger">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Please correct the following errors:</strong>
+        <ul class="mb-0 mt-2">
+          {% for field, errors in form.errors.items %} {% for error in errors %}
+          <li>{{ field|title }}: {{ error }}</li>
+          {% endfor %} {% endfor %}
+        </ul>
+      </div>
       {% endif %}
 
       <form method="post" id="addCourseForm">
         {% csrf_token %}
-        
+
         <!-- Course Name Field -->
         <div class="form-group">
           <label for="{{ form.name.id_for_label }}">
@@ -381,7 +381,7 @@
           </label>
           {{ form.name }}
           <div class="help-text">
-            <i class="fas fa-info-circle"></i> 
+            <i class="fas fa-info-circle"></i>
             Enter the full course name (e.g., "Advanced Database Systems")
           </div>
           <div class="char-counter" id="nameCounter">0/200 characters</div>
@@ -395,7 +395,7 @@
           </label>
           {{ form.code }}
           <div class="help-text">
-            <i class="fas fa-info-circle"></i> 
+            <i class="fas fa-info-circle"></i>
             Enter the course code (e.g., "CS401", "BCS 306")
           </div>
           <div class="char-counter" id="codeCounter">0/20 characters</div>
@@ -408,37 +408,46 @@
             Assign to Program(s)
           </label>
           <div class="help-text mb-3">
-            <i class="fas fa-info-circle"></i> 
+            <i class="fas fa-info-circle"></i>
             Select one or more programs for this course
           </div>
-          
+
           <div class="programs-grid">
             {% for program in form.programs.field.queryset %}
-              <div class="program-checkbox">
-                <input type="checkbox" 
-                       name="programs" 
-                       value="{{ program.id }}"
-                       id="program_{{ program.id }}"
-                       {% if program.id in form.programs.value %}checked{% endif %}>
-                <label for="program_{{ program.id }}">
-                  {{ program.name }}
-                  <span class="program-code">({{ program.code }})</span>
-                </label>
-              </div>
+            <div class="program-checkbox">
+              <input
+                type="checkbox"
+                name="programs"
+                value="{{ program.id }}"
+                id="program_{{ program.id }}"
+                {%
+                if
+                program.id
+                in
+                form.programs.value
+                %}checked{%
+                endif
+                %}
+              />
+              <label for="program_{{ program.id }}">
+                {{ program.name }}
+                <span class="program-code">({{ program.code }})</span>
+              </label>
+            </div>
             {% empty %}
-              <div class="help-text">
-                <i class="fas fa-exclamation-triangle"></i> 
-                No programs available. Please contact administrator.
-              </div>
+            <div class="help-text">
+              <i class="fas fa-exclamation-triangle"></i>
+              No programs available. Please contact administrator.
+            </div>
             {% endfor %}
           </div>
-          
+
           {% if form.programs.errors %}
-            <div class="errorlist">
-              {% for error in form.programs.errors %}
-                <li>{{ error }}</li>
-              {% endfor %}
-            </div>
+          <div class="errorlist">
+            {% for error in form.programs.errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+          </div>
           {% endif %}
         </div>
 
@@ -456,120 +465,108 @@
       </form>
     </div>
   </div>
-
-  <!-- Help Section -->
-  <div class="row mt-4">
-    <div class="col-12">
-      <div class="alert alert-info" style="background: #e7f3ff; border: none; border-radius: 12px;">
-        <i class="fas fa-lightbulb fa-lg me-3"></i>
-        <strong>Pro Tip:</strong> After adding a course, you'll be able to:
-        <ul class="mt-2 mb-0">
-          <li>Onboard students to the course</li>
-          <li>Start QR-based attendance sessions</li>
-          <li>Track attendance and generate reports</li>
-        </ul>
-      </div>
-    </div>
-  </div>
 </div>
 
 <script>
   // Character counter for Course Name
-  const nameInput = document.getElementById('{{ form.name.id_for_label }}');
-  const nameCounter = document.getElementById('nameCounter');
-  
+  const nameInput = document.getElementById("{{ form.name.id_for_label }}");
+  const nameCounter = document.getElementById("nameCounter");
+
   if (nameInput && nameCounter) {
     function updateNameCounter() {
       const length = nameInput.value.length;
       nameCounter.textContent = `${length}/200 characters`;
       if (length > 180) {
-        nameCounter.classList.add('warning');
+        nameCounter.classList.add("warning");
       } else {
-        nameCounter.classList.remove('warning');
+        nameCounter.classList.remove("warning");
       }
       if (length >= 200) {
-        nameCounter.classList.add('danger');
+        nameCounter.classList.add("danger");
       } else {
-        nameCounter.classList.remove('danger');
+        nameCounter.classList.remove("danger");
       }
     }
-    
-    nameInput.addEventListener('input', updateNameCounter);
+
+    nameInput.addEventListener("input", updateNameCounter);
     updateNameCounter();
   }
-  
+
   // Character counter for Course Code
-  const codeInput = document.getElementById('{{ form.code.id_for_label }}');
-  const codeCounter = document.getElementById('codeCounter');
-  
+  const codeInput = document.getElementById("{{ form.code.id_for_label }}");
+  const codeCounter = document.getElementById("codeCounter");
+
   if (codeInput && codeCounter) {
     function updateCodeCounter() {
       const length = codeInput.value.length;
       codeCounter.textContent = `${length}/20 characters`;
       if (length > 15) {
-        codeCounter.classList.add('warning');
+        codeCounter.classList.add("warning");
       } else {
-        codeCounter.classList.remove('warning');
+        codeCounter.classList.remove("warning");
       }
       if (length >= 20) {
-        codeCounter.classList.add('danger');
+        codeCounter.classList.add("danger");
       } else {
-        codeCounter.classList.remove('danger');
+        codeCounter.classList.remove("danger");
       }
     }
-    
-    codeInput.addEventListener('input', updateCodeCounter);
+
+    codeInput.addEventListener("input", updateCodeCounter);
     updateCodeCounter();
   }
-  
+
   // Form submission with loading state
-  const form = document.getElementById('addCourseForm');
-  const submitBtn = document.getElementById('submitBtn');
-  
+  const form = document.getElementById("addCourseForm");
+  const submitBtn = document.getElementById("submitBtn");
+
   if (form && submitBtn) {
-    form.addEventListener('submit', function(e) {
+    form.addEventListener("submit", function (e) {
       // Check if at least one program is selected
-      const checkboxes = document.querySelectorAll('input[name="programs"]:checked');
+      const checkboxes = document.querySelectorAll(
+        'input[name="programs"]:checked',
+      );
       if (checkboxes.length === 0) {
         e.preventDefault();
-        alert('Please select at least one program for this course.');
+        alert("Please select at least one program for this course.");
         return;
       }
-      
+
       // Show loading state
       submitBtn.disabled = true;
-      submitBtn.innerHTML = '<span class="loading-spinner"></span> Adding Course...';
-      submitBtn.classList.add('btn-loading');
+      submitBtn.innerHTML =
+        '<span class="loading-spinner"></span> Adding Course...';
+      submitBtn.classList.add("btn-loading");
     });
   }
-  
+
   // Auto-dismiss alerts after 5 seconds
-  setTimeout(function() {
-    const alerts = document.querySelectorAll('.alert-success, .alert-danger');
-    alerts.forEach(function(alert) {
+  setTimeout(function () {
+    const alerts = document.querySelectorAll(".alert-success, .alert-danger");
+    alerts.forEach(function (alert) {
       const bsAlert = new bootstrap.Alert(alert);
-      setTimeout(function() {
+      setTimeout(function () {
         bsAlert.close();
       }, 5000);
     });
   }, 5000);
-  
+
   // Add hover effect to program checkboxes
-  const programCheckboxes = document.querySelectorAll('.program-checkbox');
-  programCheckboxes.forEach(function(checkbox) {
-    checkbox.addEventListener('mouseenter', function() {
-      this.style.transform = 'translateX(5px)';
+  const programCheckboxes = document.querySelectorAll(".program-checkbox");
+  programCheckboxes.forEach(function (checkbox) {
+    checkbox.addEventListener("mouseenter", function () {
+      this.style.transform = "translateX(5px)";
     });
-    
-    checkbox.addEventListener('mouseleave', function() {
-      this.style.transform = 'translateX(0)';
+
+    checkbox.addEventListener("mouseleave", function () {
+      this.style.transform = "translateX(0)";
     });
   });
-  
+
   // Input validation for course code (uppercase, alphanumeric)
   if (codeInput) {
-    codeInput.addEventListener('input', function(e) {
-      this.value = this.value.toUpperCase().replace(/[^A-Z0-9\s]/g, '');
+    codeInput.addEventListener("input", function (e) {
+      this.value = this.value.toUpperCase().replace(/[^A-Z0-9\s]/g, "");
     });
   }
 </script>
