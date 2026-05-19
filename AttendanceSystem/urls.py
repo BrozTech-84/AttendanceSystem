@@ -1,52 +1,36 @@
-"""
-URL configuration for AttendanceSystem project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/6.0/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
-
-"""
 from django.contrib import admin
 from django.urls import path, include
-from django.views.generic import TemplateView
-
-urlpatterns = [
-    path('', include('UserLogin.urls')),
-    path('admin/', admin.site.urls),
-    path('user/', include('UserLogin.urls')),
-    path('scanner/', include('StudentScanner.urls')),
-    path('lecturer/', include('LecturerDashboard.urls')),
-    path('admin-dashboard/', include('AdminDashboard.urls')),
-    path('qr/', include('QrCodeGenerator.urls')),
-
-]
-
-"""
-
-from django.contrib import admin
-from django.urls import path
+from django.shortcuts import redirect
 from django.http import HttpResponse
 
+# Temporary home page - you can replace with your actual homepage
 def home_view(request):
     return HttpResponse("""
-        <h1>Attendance System - Test Page</h1>
-        <p>If you can see this, the server is working!</p>
-        <p>✅ Deployment successful</p>
-        <hr>
-        <p><a href="/admin/">Admin Panel</a></p>
+        <!DOCTYPE html>
+        <html>
+        <head><title>QR Attendance System</title></head>
+        <body style="font-family: Arial; text-align: center; padding: 50px;">
+            <h1>📱 QR Attendance System</h1>
+            <p>System is running successfully!</p>
+            <div style="margin-top: 30px;">
+                <a href="/lecturer/dashboard/" style="display: inline-block; margin: 10px; padding: 10px 20px; background: #007bff; color: white; text-decoration: none; border-radius: 5px;">
+                    👨‍🏫 Lecturer Dashboard
+                </a>
+                <a href="/scanner/dashboard/" style="display: inline-block; margin: 10px; padding: 10px 20px; background: #28a745; color: white; text-decoration: none; border-radius: 5px;">
+                    📱 Student Dashboard
+                </a>
+                <a href="/admin/" style="display: inline-block; margin: 10px; padding: 10px 20px; background: #6c757d; color: white; text-decoration: none; border-radius: 5px;">
+                    🔐 Admin Panel
+                </a>
+            </div>
+        </body>
+        </html>
     """)
 
 urlpatterns = [
-    path('', home_view),
+    path('', home_view, name='home'),
     path('admin/', admin.site.urls),
+    path('', include('UserLogin.urls')),
+    path('lecturer/', include('LecturerDashboard.urls')),
+    path('scanner/', include('StudentScanner.urls')),
 ]

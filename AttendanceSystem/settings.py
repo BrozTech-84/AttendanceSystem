@@ -5,31 +5,22 @@ Django settings for AttendanceSystem project.
 import os
 from pathlib import Path
 from decouple import config
-import dj_database_url  # Add this import - it was missing
+import dj_database_url
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-dev-key-change-this')
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-#DEBUG = config('DEBUG', default=False, cast=bool)
-DEBUG = True  # Set to True for development, change to False in production
-#ALLOWED_HOSTS = [
-#    'attendancesystem-8frd.onrender.com',
-#    '.onrender.com',  # This allows all render subdomains
-#    'localhost',
-#    '127.0.0.1',
-#]
+DEBUG = False
 
-ALLOWED_HOSTS = ['*']
-
-CSRF_TRUSTED_ORIGINS = [
-    #'https://attendancesystem-8frd.onrender.com',
-    #'https://*.onrender.com',
+ALLOWED_HOSTS = [
+    'attendancesystem-8frd.onrender.com',
+    '.onrender.com',  # Allows all render subdomains
+    'localhost',
+    '127.0.0.1',
 ]
-
 
 # Application definition
 INSTALLED_APPS = [
@@ -97,7 +88,6 @@ CHANNEL_LAYERS = {
 
 # Database Configuration
 if os.environ.get('DATABASE_URL'):
-    # Production on Railway - use PostgreSQL
     DATABASES = {
         'default': dj_database_url.config(
             default=os.environ['DATABASE_URL'],
@@ -106,7 +96,6 @@ if os.environ.get('DATABASE_URL'):
         )
     }
 else:
-    # Local development - use SQLite
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -144,16 +133,29 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# HTTPS Security Settings (Railway provides HTTPS)
-SECURE_SSL_REDIRECT = False
-SESSION_COOKIE_SECURE = False
-CSRF_COOKIE_SECURE = False
-SECURE_BROWSER_XSS_FILTER = False
-SECURE_CONTENT_TYPE_NOSNIFF = False
+# HTTPS Security Settings - RE-ENABLED for production
+# Render provides HTTPS, but we need to tell Django to trust it
+SECURE_SSL_REDIRECT = False  # Keep False because Render handles SSL
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # Tell Django to trust proxy SSL
+SESSION_COOKIE_SECURE = True  # Re-enabled - send cookies only over HTTPS
+CSRF_COOKIE_SECURE = True  # Re-enabled - send CSRF tokens only over HTTPS
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
 
-# CSRF & CORS
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='https://*.railway.app').split(',')
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='https://*.railway.app').split(',')
+# HSTS Settings
+SECURE_HSTS_SECONDS = 31536000  # 1 year
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+# CSRF & CORS Settings
+CSRF_TRUSTED_ORIGINS = [
+    'https://attendancesystem-8frd.onrender.com',
+    'https://*.onrender.com',
+]
+CORS_ALLOWED_ORIGINS = [
+    'https://attendancesystem-8frd.onrender.com',
+    'https://*.onrender.com',
+]
 
 # Login URLs
 LOGIN_URL = 'login'
