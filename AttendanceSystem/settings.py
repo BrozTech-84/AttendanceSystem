@@ -10,17 +10,12 @@ import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-dev-key-change-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True  # Keep True for local testing, will be overridden by env var
 
-ALLOWED_HOSTS = [
-    'attendancesystem-8frd.onrender.com',
-    '.onrender.com',  # Allows all render subdomains
-    'localhost',
-    '127.0.0.1',
-]
+ALLOWED_HOSTS = ['*']  # Allow all for local testing
 
 # Application definition
 INSTALLED_APPS = [
@@ -33,6 +28,7 @@ INSTALLED_APPS = [
     'channels',
     'corsheaders',
     'whitenoise',
+    'sslserver',
     
     # MyApps
     'UserLogin',
@@ -75,33 +71,20 @@ TEMPLATES = [
 ASGI_APPLICATION = 'AttendanceSystem.asgi.application'
 WSGI_APPLICATION = 'AttendanceSystem.wsgi.application'
 
-# Channel Layers - Use Redis for production
-REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379')
+# Use in-memory channels for local development
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [REDIS_URL],
-        },
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
     },
 }
 
-# Database Configuration
-if os.environ.get('DATABASE_URL'):
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=os.environ['DATABASE_URL'],
-            conn_max_age=60,
-            ssl_require=True
-        )
+# Database - Use SQLite for local development
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+}
 
 # Custom User Model
 AUTH_USER_MODEL = 'UserLogin.CustomUser'
@@ -124,7 +107,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files
 MEDIA_URL = '/media/'
@@ -133,29 +115,18 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# HTTPS Security Settings - RE-ENABLED for production
-# Render provides HTTPS, but we need to tell Django to trust it
-SECURE_SSL_REDIRECT = False  # Keep False because Render handles SSL
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # Tell Django to trust proxy SSL
-SESSION_COOKIE_SECURE = True  # Re-enabled - send cookies only over HTTPS
-CSRF_COOKIE_SECURE = True  # Re-enabled - send CSRF tokens only over HTTPS
-SECURE_BROWSER_XSS_FILTER = True
-SECURE_CONTENT_TYPE_NOSNIFF = True
+# Simple security settings for local development
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
 
-# HSTS Settings
-SECURE_HSTS_SECONDS = 31536000  # 1 year
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
-
-# CSRF & CORS Settings
-CSRF_TRUSTED_ORIGINS = [
-    'https://attendancesystem-8frd.onrender.com',
-    'https://*.onrender.com',
-]
-CORS_ALLOWED_ORIGINS = [
-    'https://attendancesystem-8frd.onrender.com',
-    'https://*.onrender.com',
-]
+# Cache - Use local memory
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
 
 # Login URLs
 LOGIN_URL = 'login'
@@ -172,16 +143,7 @@ MESSAGE_TAGS = {
     messages.ERROR: 'danger',
 }
 
-# Cache Configuration
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': REDIS_URL,
-        'TIMEOUT': 3600,
-    }
-}
-
-# Logging Configuration
+# Logging
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
